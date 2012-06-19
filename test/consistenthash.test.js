@@ -1,8 +1,7 @@
 var bignum = require('bignum');
 var crypto = require('crypto');
-var CHash = require('../lib/mapper');
+var CHash = require('../lib/consistentHash');
 var Logger = require('bunyan');
-var Mapper = require('../lib/mapper');
 var tap = require('tap');
 var test = tap.test;
 
@@ -271,24 +270,24 @@ test('instantiate from persisted toplogy', function(t) {
   t.end();
 });
 
-//test('collision', function(t) {
-  //var nodes = ['a', 'a'];
-  //var chash = new CHash({
-    //log: LOG,
-    //algorithm: 'sha256',
-    //nodes: nodes,
-    //numberOfReplicas: 2
-  //});
+test('collision', function(t) {
+  var nodes = ['a', 'a'];
+  var chash = new CHash({
+    log: LOG,
+    algorithm: 'sha256',
+    nodes: nodes,
+    numberOfReplicas: 2
+  });
 
-  //t.equal(chash.ring.length, 4, 'number of nodes in the ring should be 4');
-  //var map = {};
-  //chash.ring.forEach(function(node) {
-    //var key = node._hashSpace.toString(16);
-    //t.notOk(map[key], 'hashspace should not exist');
-    //map[key] = node.node;
-  //});
-  //t.end();
-//});
+  t.equal(chash.ring.length, 4, 'number of nodes in the ring should be 4');
+  var map = {};
+  chash.ring.forEach(function(node) {
+    var key = node._hashSpace.toString(16);
+    t.notOk(map[key], 'hashspace should not exist');
+    map[key] = node.node;
+  });
+  t.end();
+});
 
 tap.tearDown(function() {
   process.exit(tap.output.results.fail);

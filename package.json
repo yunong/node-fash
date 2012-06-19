@@ -1,12 +1,19 @@
 {
-  "author": "Yunong Xiao <yjxiao@gmail.com>",
+  "author": "Yunong J Xiao <yjxiao@gmail.com>",
   "name": "fash",
+  "description": "A consistent hashing library for node",
+  "keywords": [
+    "consistent hasing",
+    "hashing",
+    "distributed",
+    "dynamo"
+  ]
   "version": "0.1.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/yunong/node-fash.git"
   },
-  "main": "lib/main.js",
+  "main": "./lib/consistentHash.js",
   "directories": {
     "lib": "./lib"
   },
@@ -14,10 +21,10 @@
     "node": ">=0.6"
   },
   "dependencies": {
-    "bignum": "*",
-    "bunyan": "*"
+    "bignum": "0.4.1"
   },
   "devDependencies": {
-    "tap": "*"
+    "tap": "*",
+    "bunyan": "*"
   }
 }
