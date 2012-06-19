@@ -201,7 +201,6 @@ test('mapper', function(t) {
 
 test('instantiate from persisted toplogy', function(t) {
   var ring = chash.ring;
-  LOG.info('xiao ring', ring);
   chash2 = new CHash({
     log: LOG,
     algorithm: 'sha256',
