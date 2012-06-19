@@ -1,0 +1,23 @@
+{
+  "author": "Yunong Xiao <yjxiao@gmail.com>",
+  "name": "fash",
+  "version": "0.1.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yunong/node-fash.git"
+  },
+  "main": "lib/main.js",
+  "directories": {
+    "lib": "./lib"
+  },
+  "engines": {
+    "node": ">=0.6"
+  },
+  "dependencies": {
+    "bignum": "*",
+    "bunyan": "*"
+  },
+  "devDependencies": {
+    "tap": "*"
+  }
+}
