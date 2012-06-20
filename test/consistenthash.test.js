@@ -269,6 +269,18 @@ test('instantiate from persisted toplogy', function(t) {
   t.end();
 });
 
+test('hashing the same key', function(t) {
+  for (var i = 0; i < 10; i++) {
+    var random = Math.random().toString(33);
+    var key = random.substring(Math.floor(Math.random() * random.length));
+    var node1 = chash.getNode(key);
+    var node2 = chash.getNode(key);
+    t.equal(node1, node2);
+  }
+
+  t.end();
+});
+
 test('collision', function(t) {
   var nodes = ['a', 'a'];
   var chash = new CHash({
