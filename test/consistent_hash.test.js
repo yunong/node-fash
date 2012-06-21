@@ -1,6 +1,6 @@
 var bignum = require('bignum');
 var crypto = require('crypto');
-var CHash = require('../lib/consistentHash');
+var fash = require('../lib');
 var Logger = require('bunyan');
 var tap = require('tap');
 var test = tap.test;
@@ -18,7 +18,7 @@ var chash2;
 
 test('mapper', function(t) {
   var nodes = ['A', 'B', 'C', 'D', 'E'];
-  chash = new CHash({
+  chash = fash.createHash({
     log: LOG,
     algorithm: 'sha256',
     nodes: nodes,
@@ -201,7 +201,7 @@ test('mapper', function(t) {
 
 test('instantiate from persisted toplogy', function(t) {
   var ring = chash.ring;
-  chash2 = new CHash({
+  chash2 = fash.createHash({
     log: LOG,
     algorithm: 'sha256',
     nodes: ring,
@@ -283,7 +283,7 @@ test('hashing the same key', function(t) {
 
 test('collision', function(t) {
   var nodes = ['a', 'a'];
-  var chash = new CHash({
+  chash = fash.createHash({
     log: LOG,
     algorithm: 'sha256',
     nodes: nodes,
