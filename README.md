@@ -6,7 +6,7 @@ This module provides a consistent hashing library. The 'one more thing' feature 
 
 ## Boostrapping a New Hash Ring
 
-    var Fash = require('fash');
+    var fash = require('fash');
     var Logger = require('bunyan');
 
     var log = new Logger({
@@ -14,7 +14,7 @@ This module provides a consistent hashing library. The 'one more thing' feature 
       level: 'info'
     });
 
-    var chash = new Fash({
+    var chash = fash.createHash({
       log: log, // optional [bunyan](https://github.com/trentm/node-bunyan) log object.
       algorithm: 'sha256', // Can be any algorithm supported by openssl.
       nodes: ['A', 'B', 'C', 'D', 'E'], // The set of nodes to insert onto the ring.
