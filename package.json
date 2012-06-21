@@ -13,7 +13,7 @@
     "type": "git",
     "url": "https://github.com/yunong/node-fash.git"
   },
-  "main": "./lib/consistentHash.js",
+  "main": "./lib/index.js",
   "directories": {
     "lib": "./lib"
   },
@@ -26,5 +26,8 @@
   "devDependencies": {
     "tap": "*",
     "bunyan": "*"
+  },
+  "scripts": {
+    "test": "./node_modules/.bin/tap test/*.test.js"
   }
 }
