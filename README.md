@@ -1,3 +1,4 @@
+[![build status](https://secure.travis-ci.org/yunong/node-fash.png)](http://travis-ci.org/yunong/node-fash)
 # fash: consistent hashing library for node.js
 
 This module provides a consistent hashing library. The 'one more thing' feature this provides is the ability to **deterministically generate the same hash ring topology across a set of distributed hosts**. Fash also handles collisions of nodes on the ring and ensures no two nodes will share the same spot on the ring.
