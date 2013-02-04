@@ -16,11 +16,12 @@ var numberOfReplicas = 2;
 var numberOfVnodes = 100;
 
 test('new ring', function(t) {
-        var chash = fash.createHash({
+        var chash = fash.create({
                 log: LOG,
                 algorithm: 'sha256',
                 pnodes: ['A', 'B', 'C', 'D', 'E'],
-                vnodes: numberOfVnodes
+                vnodes: numberOfVnodes,
+                random: true
         });
 
         t.equal(chash.ring.length, numberOfVnodes);
@@ -71,11 +72,12 @@ test('new ring', function(t) {
 });
 
 test('add node', function(t) {
-        var chash = fash.createHash({
+        var chash = fash.create({
                 log: LOG,
                 algorithm: 'sha256',
                 pnodes: ['A', 'B', 'C', 'D', 'E'],
-                vnodes: numberOfVnodes
+                vnodes: numberOfVnodes,
+                random: true
         });
         var vnodes = [0, 1, 2, 3, 4];
         // assert update returns the pnodes and vnodes that were updated
@@ -92,7 +94,7 @@ test('add node', function(t) {
                 });
         });
 
-        chash.addNode('F', vnodes);
+        chash.remapNode('F', vnodes);
         t.equal(chash.ring.length, numberOfVnodes);
         // assert that each node appears once and only once
         // also assert that F maps to vnodes
@@ -103,6 +105,10 @@ test('add node', function(t) {
                 if (node.pnode === 'F') {
                         t.ok(vnodes.indexOf(node.vnode) >= 0,
                              'F should contain vnode ' + node.vnode);
+                }
+                if (vnodes.indexOf(node.vnode) >= 0) {
+                        t.equal('F', node.pnode, 'vnode ' + node.vnode +
+                                ' should map to F');
                 }
                 map[key] = node;
         });
@@ -147,14 +153,20 @@ test('add node', function(t) {
 });
 
 test('remove pnode', function(t) {
-        var chash = fash.createHash({
+        var chash = fash.create({
                 log: LOG,
                 algorithm: 'sha256',
                 vnodes: numberOfVnodes,
-                pnodes: ['A', 'B', 'C', 'D', 'E']
+                pnodes: ['A', 'B', 'C', 'D', 'E'],
+                random: true
         });
         var vnodes = chash.getVnodes('B');
-        chash.addNode('A', Object.keys(vnodes));
+        // clone vnodes since it gets destroyed on removeNode
+        var bnodes = {};
+        for (var i in vnodes) {
+                bnodes[i] = true;
+        }
+        chash.remapNode('A', Object.keys(vnodes));
         chash.removeNode('B', function(err) {
                 t.notOk(err);
                 t.equal(chash.ring.length, numberOfVnodes);
@@ -166,6 +178,11 @@ test('remove pnode', function(t) {
                         var key = node._hashspace.toString(16);
                         t.notOk(map[key], 'hashspace should not exist');
                         map[key] = node.node;
+                        if (bnodes[node.vnode]) {
+                                console.log('xxxx');
+                                t.equal('A', node.pnode, 'vnode ' + node.vnode +
+                                ' should map to A');
+                        }
                 });
 
                 for (var i = 0; i < numberOfKeys; i++) {
@@ -210,14 +227,15 @@ test('remove pnode', function(t) {
 });
 
 test('instantiate from persisted toplogy', function(t) {
-        var chash = fash.createHash({
+        var chash = fash.create({
                 log: LOG,
                 algorithm: 'sha256',
                 vnodes: numberOfVnodes,
-                pnodes: ['A', 'B', 'C', 'D', 'E']
+                pnodes: ['A', 'B', 'C', 'D', 'E'],
+                random: true
         });
         var ring = chash.ring;
-        var chash2 = fash.createHash({
+        var chash2 = fash.deserialize({
                 log: LOG,
                 algorithm: 'sha256',
                 topology: chash.ring
@@ -243,8 +261,8 @@ test('instantiate from persisted toplogy', function(t) {
 
         // add a pnode to both chashes
         var vnodes = [0, 1, 2, 3, 4];
-        chash.addNode('F', vnodes);
-        chash2.addNode('F', vnodes);
+        chash.remapNode('F', vnodes);
+        chash2.remapNode('F', vnodes);
 
         t.equal(chash2.ring.length, chash.ring.length, 'ring sizes should be identical');
         chash2.ring.forEach(function(node, index) {
@@ -266,9 +284,9 @@ test('instantiate from persisted toplogy', function(t) {
         // let's remove B
         vnodes = chash.getVnodes('B');
         // and assign B's nodes to A
-        chash.addNode('A', Object.keys(vnodes));
+        chash.remapNode('A', Object.keys(vnodes));
         var vnodes2 = chash2.getVnodes('B');
-        chash2.addNode('A', Object.keys(vnodes2));
+        chash2.remapNode('A', Object.keys(vnodes2));
         chash.removeNode('B', function(err) {
                 t.notOk(err);
                 chash2.removeNode('B', function(err) {
@@ -297,11 +315,12 @@ test('instantiate from persisted toplogy', function(t) {
 
 
 test('hashing the same key', function(t) {
-        var chash = fash.createHash({
+        var chash = fash.create({
                 log: LOG,
                 algorithm: 'sha256',
                 vnodes: numberOfVnodes,
-                pnodes: ['A', 'B', 'C', 'D', 'E']
+                pnodes: ['A', 'B', 'C', 'D', 'E'],
+                random: true
         });
         for (var i = 0; i < 10; i++) {
                 var random = Math.random().toString(33);
@@ -318,11 +337,12 @@ test('hashing the same key', function(t) {
 test('collision', function(t) {
         var caught;
         try {
-                var chash = fash.createHash({
+                var chash = fash.create({
                         log: LOG,
                         algorithm: 'sha256',
                         pnodes: ['a', 'a'],
-                        vnodes: numberOfVnodes
+                        vnodes: numberOfVnodes,
+                        random: true
                 });
         } catch (e) {
                 caught = true;
