@@ -179,7 +179,6 @@ test('remove pnode', function(t) {
                         t.notOk(map[key], 'hashspace should not exist');
                         map[key] = node.node;
                         if (bnodes[node.vnode]) {
-                                console.log('xxxx');
                                 t.equal('A', node.pnode, 'vnode ' + node.vnode +
                                 ' should map to A');
                         }
@@ -234,7 +233,8 @@ test('instantiate from persisted toplogy', function(t) {
                 pnodes: ['A', 'B', 'C', 'D', 'E'],
                 random: true
         });
-        var ring = chash.ring;
+        //var ring = chash.ring;
+        var ring = chash.serialize();
         var chash2 = fash.deserialize({
                 log: LOG,
                 algorithm: 'sha256',

@@ -132,12 +132,12 @@ At any time, the ring toplogy can be accessed by:
 Which returns the ring topology, which is an array of
 
     {
-      hashSpace, // the hashspace in a hex string that this node occupies.
+      hashspace, // the hashspace in a hex string that this node occupies.
       pnode, // the phsyical node name.
       vnode // the vnode it maps to.
     }
 
-The array is sorted by hashSpace. Additionally, anytime remapNode() is invoked,
+The array is sorted by hashspace. Additionally, anytime remapNode() is invoked,
 fash emits an `update` event which contains an updated version of the ring
 array. Fash can be instantiated given a topology object instead of a
 list of nodes.
