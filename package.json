@@ -22,7 +22,7 @@
   },
   "dependencies": {
     "assert-plus": "0.1.2",
-    "bignum": "0.4.1",
+    "bignum": "0.5.4",
     "bunyan": "*"
   },
   "devDependencies": {
