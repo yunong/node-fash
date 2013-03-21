@@ -24,10 +24,10 @@ test('new ring', function(t) {
         random: true
     });
 
-    t.equal(chash.ring.length, numberOfVnodes);
+    t.equal(chash.ring_.length, numberOfVnodes);
     // assert that each node appears once and only once
     var map = {};
-    chash.ring.forEach(function(node) {
+    chash.ring_.forEach(function(node) {
         var key = node._hashspace.toString(16);
         t.notOk(map[key], 'hashspace should not exist');
         map[key] = node.node;
@@ -44,13 +44,13 @@ test('new ring', function(t) {
             hash = hash.digest('hex');
             hash = bignum(hash, 16);
 
-            var index = chash.binarySearch(chash.ring, hash);
+            var index = chash.binarySearch(chash.ring_, hash);
             var prevNode;
             if (index !== 0) {
-                prevNode = chash.ring[index - 1]._hashspace;
+                prevNode = chash.ring_[index - 1]._hashspace;
             }
 
-            var currNode = chash.ring[index]._hashspace;
+            var currNode = chash.ring_[index]._hashspace;
             // assert hash is in bewtween index -1 and index
             if (index !== 0) {
                 t.ok(hash.le(currNode), 'hash ' + hash +
@@ -63,9 +63,9 @@ test('new ring', function(t) {
             t.ok(node);
             // assert node returned by getNode is the same as what we've
             // calculated
-            t.equal(node.pnode, chash.ring[index].pnode,
+            t.equal(node.pnode, chash.ring_[index].pnode,
             'pnodes should match');
-            t.equal(node.vnode, chash.ring[index].vnode,
+            t.equal(node.vnode, chash.ring_[index].vnode,
             'vnodes should match');
     }
     t.end();
@@ -95,11 +95,11 @@ test('add node', function(t) {
     });
 
     chash.remapNode('F', vnodes);
-    t.equal(chash.ring.length, numberOfVnodes);
+    t.equal(chash.ring_.length, numberOfVnodes);
     // assert that each node appears once and only once also assert that F maps
     // to vnodes
     map = {};
-    chash.ring.forEach(function(node) {
+    chash.ring_.forEach(function(node) {
         var key = node._hashspace.toString(16);
         t.notOk(map[key], 'hashspace should not exist');
         if (node.pnode === 'F') {
@@ -124,13 +124,13 @@ test('add node', function(t) {
             hash = hash.digest('hex');
             hash = bignum(hash, 16);
 
-            var index = chash.binarySearch(chash.ring, hash);
+            var index = chash.binarySearch(chash.ring_, hash);
             var prevNode;
             if (index !== 0) {
-                prevNode = chash.ring[index - 1]._hashspace;
+                prevNode = chash.ring_[index - 1]._hashspace;
             }
 
-            var currNode = chash.ring[index]._hashspace;
+            var currNode = chash.ring_[index]._hashspace;
             // assert hash is in between index -1 and index
             if (index !== 0) {
                 t.ok(hash.le(currNode), 'hash ' + hash +
@@ -143,9 +143,9 @@ test('add node', function(t) {
             t.ok(node);
             // assert node returned by getNode is the same as what we've
             // calculated
-            t.equal(node.pnode, chash.ring[index].pnode,
+            t.equal(node.pnode, chash.ring_[index].pnode,
             'pnodes should match');
-            t.equal(node.vnode, chash.ring[index].vnode,
+            t.equal(node.vnode, chash.ring_[index].vnode,
             'vnodes should match');
     }
 
@@ -169,11 +169,11 @@ test('remove pnode', function(t) {
     chash.remapNode('A', Object.keys(vnodes));
     chash.removeNode('B', function(err) {
         t.notOk(err);
-        t.equal(chash.ring.length, numberOfVnodes);
+        t.equal(chash.ring_.length, numberOfVnodes);
         t.notOk(chash.getVnodes('B'));
         // assert that each node appears once and only once
         var map = {};
-        chash.ring.forEach(function(node) {
+        chash.ring_.forEach(function(node) {
             t.notOk(node.pnode  === 'B');
             var key = node._hashspace.toString(16);
             t.notOk(map[key], 'hashspace should not exist');
@@ -195,15 +195,15 @@ test('remove pnode', function(t) {
                 hash = hash.digest('hex');
                 hash = bignum(hash, 16);
 
-                var index = chash.binarySearch(chash.ring,
+                var index = chash.binarySearch(chash.ring_,
                 hash);
                 var prevNode;
                 if (index !== 0) {
-                    prevNode = chash.ring[index - 1].
+                    prevNode = chash.ring_[index - 1].
                     _hashspace;
                 }
 
-                var currNode = chash.ring[index]._hashspace;
+                var currNode = chash.ring_[index]._hashspace;
                 // assert hash is in bewtween index -1 and index
                 if (index !== 0) {
                     t.ok(hash.le(currNode), 'hash ' + hash +
@@ -216,9 +216,9 @@ test('remove pnode', function(t) {
                 t.ok(node);
                 // assert node returned by getNode is the same
                 // as what we've calculated
-                t.equal(node.pnode, chash.ring[index].pnode,
+                t.equal(node.pnode, chash.ring_[index].pnode,
                 'pnodes should match');
-                t.equal(node.vnode, chash.ring[index].vnode,
+                t.equal(node.vnode, chash.ring_[index].vnode,
                 'vnodes should match');
         }
         t.end();
@@ -233,18 +233,18 @@ test('instantiate from persisted toplogy', function(t) {
         pnodes: ['A', 'B', 'C', 'D', 'E'],
         random: true
     });
-    //var ring = chash.ring;
+    //var ring = chash.ring_;
     var ring = chash.serialize();
     var chash2 = fash.deserialize({
         log: LOG,
         algorithm: 'sha256',
-        topology: chash.ring
+        topology: chash.ring_
     });
 
     t.ok(chash2);
-    t.equal(chash2.ring.length, chash.ring.length, 'ring sizes should be identical');
-    chash2.ring.forEach(function(node, index) {
-        var node2 = chash2.ring[index];
+    t.equal(chash2.ring_.length, chash.ring_.length, 'ring sizes should be identical');
+    chash2.ring_.forEach(function(node, index) {
+        var node2 = chash2.ring_[index];
         t.ok(node._hashspace.eq(node2._hashspace));
         t.equal(node.hashspace, node2.hashspace);
         t.equal(node.node, node2.node);
@@ -264,9 +264,9 @@ test('instantiate from persisted toplogy', function(t) {
     chash.remapNode('F', vnodes);
     chash2.remapNode('F', vnodes);
 
-    t.equal(chash2.ring.length, chash.ring.length, 'ring sizes should be identical');
-    chash2.ring.forEach(function(node, index) {
-        var node2 = chash2.ring[index];
+    t.equal(chash2.ring_.length, chash.ring_.length, 'ring sizes should be identical');
+    chash2.ring_.forEach(function(node, index) {
+        var node2 = chash2.ring_[index];
         t.ok(node._hashspace.eq(node2._hashspace));
         t.equal(node.hashspace, node2.hashspace);
         t.equal(node.node, node2.node);
@@ -291,9 +291,9 @@ test('instantiate from persisted toplogy', function(t) {
         t.notOk(err);
         chash2.removeNode('B', function(err) {
             t.notOk(err);
-            t.equal(chash2.ring.length, chash.ring.length, 'ring sizes should be identical');
-            chash.ring.forEach(function(node, index) {
-                var node2 = chash2.ring[index];
+            t.equal(chash2.ring_.length, chash.ring_.length, 'ring sizes should be identical');
+            chash.ring_.forEach(function(node, index) {
+                var node2 = chash2.ring_[index];
                 t.ok(node._hashspace.eq(node2._hashspace));
                 t.equal(node.hashspace, node2.hashspace);
                 t.equal(node.pnode, node2.pnode);
