@@ -10,7 +10,8 @@ var LOG = new Logger({
     name: 'consistent-hash-test',
     src: true,
     //level: 'info',
-    level: 'debug',
+    //level: 'debug',
+    level: 'trace',
     //level: process.LOG_LEVEL || 'info'
 });
 var numberOfKeys = 100;
@@ -18,62 +19,7 @@ var numberOfReplicas = 2;
 //var numberOfVnodes = 10000;
 var numberOfVnodes = 100;
 
-test('new ring', function(t) {
-    var chash = fash.create({
-        log: LOG,
-        algorithm: 'sha256',
-        algorithmMax: fash.SHA_256_MAX,
-        pnodes: ['A', 'B', 'C', 'D', 'E'],
-        vnodes: numberOfVnodes,
-        random: true
-    });
-
-    t.equal(chash.ring_.length, numberOfVnodes);
-    // assert that each node appears once and only once
-    var map = {};
-    chash.ring_.forEach(function(node) {
-        var key = node.hashspace;
-        t.notOk(map[key], 'hashspace should not exist');
-        map[key] = node.node;
-    });
-
-    for (var i = 0; i < numberOfKeys; i++) {
-        var random = Math.random().toString(33);
-        var key = random.substring(
-            Math.floor(Math.random() * random.length));
-            var node = chash.getNode(key);
-
-            var hash = crypto.createHash('sha256');
-            hash.update(key);
-            hash = hash.digest('hex');
-            hash = bignum(hash, 16);
-
-            var index = parseInt(chash.findVnode(hash), 10);
-            var nextNode;
-            // if we are at the last vnode, then skip checking for nextNode since there isn't one
-            if (index < (numberOfVnodes - 1)) {
-                nextNode = bignum(chash.ring_[index + 1].hashspace, 16);
-            }
-
-            var currNode = chash.ring_[index].hashspace;
-            currNode = bignum(currNode, 16).toString(16);
-            // assert hash is in bewtween index + 1 and index
-            t.ok(hash.ge(currNode), 'hash ' + bignum(hash, 10).toString(16) +
-                 ' should be >= than \n' + currNode.toString(16));
-            if (index < (numberOfVnodes - 1)) {
-                t.ok(hash.lt(nextNode), 'hash ' + hash + ' should be < than ' +
-                    nextNode + ' index is ' + index + ' node ' + util.inspect(node));
-            }
-
-            t.ok(node);
-            // assert node returned by getNode is the same as what we've calculated
-            t.equal(node.pnode, chash.ring_[index].pnode, 'pnodes should match');
-            t.equal(node.vnode, chash.ring_[index].vnode, 'vnodes should match');
-    }
-    t.end();
-});
-
-//test('remapvnode', function(t) {
+//test('new ring', function(t) {
     //var chash = fash.create({
         //log: LOG,
         //algorithm: 'sha256',
@@ -83,15 +29,83 @@ test('new ring', function(t) {
         //random: true
     //});
 
-    //// get vnodes from A
-    //var aVnodes = chash.getVnodes('A');
+    //t.equal(chash.ring_.length, numberOfVnodes);
+    //// assert that each node appears once and only once
+    //var map = {};
+    //chash.ring_.forEach(function(node) {
+        //var key = node.hashspace;
+        //t.notOk(map[key], 'hashspace should not exist');
+        //map[key] = node.node;
+    //});
 
-    //// remap all to B
-    ////chash.remapVnode('B', aVnodes, function(err, ring, pnodes) {
-        ////t.fail(err);
-        //t.end();
-    ////});
+    //for (var i = 0; i < numberOfKeys; i++) {
+        //var random = Math.random().toString(33);
+        //var key = random.substring(
+            //Math.floor(Math.random() * random.length));
+            //var node = chash.getNode(key);
+
+            //var hash = crypto.createHash('sha256');
+            //hash.update(key);
+            //hash = hash.digest('hex');
+            //hash = bignum(hash, 16);
+
+            //var index = parseInt(chash.findVnode(hash), 10);
+            //var nextNode;
+            //// if we are at the last vnode, then skip checking for nextNode since there isn't one
+            //if (index < (numberOfVnodes - 1)) {
+                //nextNode = bignum(chash.ring_[index + 1].hashspace, 16);
+            //}
+
+            //var currNode = chash.ring_[index].hashspace;
+            //currNode = bignum(currNode, 16).toString(16);
+            //// assert hash is in bewtween index + 1 and index
+            //t.ok(hash.ge(currNode), 'hash ' + bignum(hash, 10).toString(16) +
+                 //' should be >= than \n' + currNode.toString(16));
+            //if (index < (numberOfVnodes - 1)) {
+                //t.ok(hash.lt(nextNode), 'hash ' + hash + ' should be < than ' +
+                    //nextNode + ' index is ' + index + ' node ' + util.inspect(node));
+            //}
+
+            //t.ok(node);
+            //// assert node returned by getNode is the same as what we've calculated
+            //t.equal(node.pnode, chash.ring_[index].pnode, 'pnodes should match');
+            //t.equal(node.vnode, chash.ring_[index].vnode, 'vnodes should match');
+    //}
+    //t.end();
 //});
+
+test('remapvnode', function(t) {
+    var chash = fash.create({
+        log: LOG,
+        algorithm: 'sha256',
+        algorithmMax: fash.SHA_256_MAX,
+        pnodes: ['A', 'B', 'C', 'D', 'E'],
+        vnodes: numberOfVnodes,
+        random: true
+    });
+
+    var beforeRing = chash.serialize();
+    // get vnodes from A
+    var aVnodes = chash.getVnodes('A');
+
+    // remap all to B
+    chash.remapVnode('B', aVnodes, function(err, ring, pnodes) {
+        t.ifErr(err);
+
+        var afterRing = chash.serialize();
+        afterRing.forEach(function(elem) {
+            t.ok((elem.pnode.toString() !== 'A'), 'pnode B should not exist in ring');
+        });
+
+        beforeRing.forEach(function(elem, index, array) {
+            if (elem.pnode.toString() === 'A') {
+                t.ok(afterRing[index].pnode.toString() === 'B',
+                     'vnode ' + index + 'should belong to B');
+            }
+        });
+        t.end();
+    });
+});
 //test('add node', function(t) {
     //var chash = fash.create({
         //log: LOG,

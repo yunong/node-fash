@@ -23,7 +23,8 @@
   "dependencies": {
     "assert-plus": "0.1.2",
     "bignum": "0.5.4",
-    "bunyan": "*"
+    "bunyan": "*",
+    "levelup": "0.6.2"
   },
   "devDependencies": {
     "tap": "*",
