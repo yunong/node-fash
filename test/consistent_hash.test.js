@@ -9,13 +9,14 @@ var test = tap.test;
 var LOG = new Logger({
     name: 'consistent-hash-test',
     src: true,
-    level: 'trace',
+    //level: 'info',
+    level: 'debug',
     //level: process.LOG_LEVEL || 'info'
 });
-var numberOfKeys = 1000;
+var numberOfKeys = 100;
 var numberOfReplicas = 2;
 //var numberOfVnodes = 10000;
-var numberOfVnodes = 1000;
+var numberOfVnodes = 100;
 
 test('new ring', function(t) {
     var chash = fash.create({
@@ -72,6 +73,25 @@ test('new ring', function(t) {
     t.end();
 });
 
+//test('remapvnode', function(t) {
+    //var chash = fash.create({
+        //log: LOG,
+        //algorithm: 'sha256',
+        //algorithmMax: fash.SHA_256_MAX,
+        //pnodes: ['A', 'B', 'C', 'D', 'E'],
+        //vnodes: numberOfVnodes,
+        //random: true
+    //});
+
+    //// get vnodes from A
+    //var aVnodes = chash.getVnodes('A');
+
+    //// remap all to B
+    ////chash.remapVnode('B', aVnodes, function(err, ring, pnodes) {
+        ////t.fail(err);
+        //t.end();
+    ////});
+//});
 //test('add node', function(t) {
     //var chash = fash.create({
         //log: LOG,
