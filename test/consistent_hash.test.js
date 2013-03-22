@@ -74,7 +74,7 @@ var numberOfVnodes = 100;
     //t.end();
 //});
 
-test('remapvnode', function(t) {
+test('remapOnePnodeToAnother', function(t) {
     var chash = fash.create({
         log: LOG,
         algorithm: 'sha256',
@@ -94,7 +94,7 @@ test('remapvnode', function(t) {
 
         var afterRing = chash.serialize();
         afterRing.forEach(function(elem) {
-            t.ok((elem.pnode.toString() !== 'A'), 'pnode B should not exist in ring');
+            t.ok((elem.pnode.toString() !== 'A'), 'pnode A should not exist in ring');
         });
 
         beforeRing.forEach(function(elem, index, array) {
@@ -102,6 +102,43 @@ test('remapvnode', function(t) {
                 t.ok(afterRing[index].pnode.toString() === 'B',
                      'vnode ' + index + 'should belong to B');
             }
+        });
+        t.end();
+    });
+});
+
+test('remapSomeVnodeToAnother', function(t) {
+    var chash = fash.create({
+        log: LOG,
+        algorithm: 'sha256',
+        algorithmMax: fash.SHA_256_MAX,
+        pnodes: ['A', 'B', 'C', 'D', 'E'],
+        vnodes: numberOfVnodes,
+        random: true
+    });
+
+    var beforeRing = chash.serialize();
+    // get vnodes from A
+    var aVnodes = chash.getVnodes('A');
+    aVnodes = aVnodes.slice(aVnodes.length / 2);
+
+    // remap all to B
+    chash.remapVnode('B', aVnodes, function(err, ring, pnodes) {
+        t.ifErr(err);
+
+        var afterRing = chash.serialize();
+        afterRing.forEach(function(elem) {
+            if (elem.pnode.toString() === 'A') {
+                aVnodes.forEach(function(remappedVnode) {
+                    t.ok(elem.vnode.toString() !== remappedVnode.toString(),
+                         'remapped vnode ' + remappedVnode + ' should not belong to A');
+                });
+            }
+        });
+
+        aVnodes.forEach(function(remappedVnode) {
+            var pnode = afterRing[parseInt(remappedVnode, 10)].pnode.toString();
+            t.ok(pnode === 'B', 'vnode ' + remappedVnode + 'should belong to B');
         });
         t.end();
     });
