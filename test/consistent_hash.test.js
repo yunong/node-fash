@@ -19,19 +19,19 @@ var numberOfReplicas = 2;
 //var numberOfVnodes = 10000;
 var numberOfVnodes = 10;
 
-//test('new ring', function(t) {
-    //var chash = fash.create({
-        //log: LOG,
-        //algorithm: 'sha256',
-        //algorithmMax: fash.SHA_256_MAX,
-        //pnodes: ['A', 'B', 'C', 'D', 'E'],
-        //vnodes: numberOfVnodes,
-    //});
+test('new ring', function(t) {
+    var chash = fash.create({
+        log: LOG,
+        algorithm: 'sha256',
+        algorithmMax: fash.SHA_256_MAX,
+        pnodes: ['A', 'B', 'C', 'D', 'E'],
+        vnodes: numberOfVnodes,
+    });
 
-    //_verifyRing(chash, t, function() {
-        //t.end();
-    //});
-//});
+    _verifyRing(chash, t, function() {
+        t.end();
+    });
+});
 
 test('remapOnePnodeToAnother', function(t) {
     var chash = fash.create({
@@ -50,14 +50,13 @@ test('remapOnePnodeToAnother', function(t) {
     chash.remapVnode('B', aVnodes, function(err, ring, pnodes) {
         t.ifErr(err);
 
-        var afterRing = chash.serialize();
-        Object.keys(chash.pnodeToVnodeMap_).forEach(function(pnode) {
-            if (pnode === 'A') {
-                pnodeKeys = Object.keys(chash.pnodeToVnodeMap_[pnode]);
-                t.ok((pnodeKeys.length === 0),
-                     'pnode A should no map to any vnodes');
-            }
-        });
+        var pnode = chash.pnodeToVnodeMap_['A'];
+        if (pnode) {
+
+            pnodeKeys = Object.keys(pnode);
+            t.ok((pnodeKeys.length === 0),
+            'pnode A should not map to any vnodes');
+        }
 
         var remmappedVnodes = beforeRing['A'];
 
@@ -72,203 +71,197 @@ test('remapOnePnodeToAnother', function(t) {
     });
 });
 
-//test('remapSomeVnodeToAnother', function(t) {
-    //var chash = fash.create({
-        //log: LOG,
-        //algorithm: 'sha256',
-        //algorithmMax: fash.SHA_256_MAX,
-        //pnodes: ['A', 'B', 'C', 'D', 'E'],
-        //vnodes: numberOfVnodes,
-    //});
+test('remapSomeVnodeToAnother', function(t) {
+    var chash = fash.create({
+        log: LOG,
+        algorithm: 'sha256',
+        algorithmMax: fash.SHA_256_MAX,
+        pnodes: ['A', 'B', 'C', 'D', 'E'],
+        vnodes: numberOfVnodes,
+    });
 
-    //var beforeRing = chash.serialize();
-    //// get vnodes from A
-    //var aVnodes = chash.getVnodes('A');
-    //aVnodes = aVnodes.slice(aVnodes.length / 2);
+    var beforeRing = JSON.parse(chash.serialize()).pnodeToVnodeMap;
+    // get vnodes from A
+    var aVnodes = chash.getVnodes('A');
+    aVnodes = aVnodes.slice(aVnodes.length / 2);
 
-    //// remap some of A's vnodes to B
-    //chash.remapVnode('B', aVnodes, function(err, ring, pnodes) {
-        //t.ifErr(err);
+    // remap some of A's vnodes to B
+    chash.remapVnode('B', aVnodes, function(err, ring, pnodes) {
+        t.ifErr(err);
 
-        //var afterRing = chash.serialize();
-        //afterRing.forEach(function(elem) {
-            //if (elem.pnode.toString() === 'A') {
-                //aVnodes.forEach(function(remappedVnode) {
-                    //t.ok(elem.vnode.toString() !== remappedVnode.toString(),
-                         //'remapped vnode ' + remappedVnode + ' should not belong to A');
-                //});
-            //}
-        //});
+        var aVnodesAfter = chash.pnodeToVnodeMap_['A'];
+        aVnodes.forEach(function(vnode) {
+            t.notOk(aVnodesAfter[vnode],
+                    'remapped vnode ' + vnode + ' should not belong to A');
+        });
 
-        //aVnodes.forEach(function(remappedVnode) {
-            //var pnode = afterRing[parseInt(remappedVnode, 10)].pnode.toString();
-            //t.ok(pnode === 'B', 'vnode ' + remappedVnode + 'should belong to B');
-        //});
+        aVnodes.forEach(function(vnode) {
+            t.ok((chash.vnodeToPnodeMap_[vnode] === 'B'),
+                 'vnode ' + vnode + ' should belong to B');
+        });
 
-        //_verifyRing(chash, t, function() {
-            //t.end();
-        //});
-    //});
-//});
+        _verifyRing(chash, t, function() {
+            t.end();
+        });
+    });
+});
 
-//test('removePnode', function(t) {
-    //var chash = fash.create({
-        //log: LOG,
-        //algorithm: 'sha256',
-        //algorithmMax: fash.SHA_256_MAX,
-        //pnodes: ['A', 'B', 'C', 'D', 'E'],
-        //vnodes: numberOfVnodes,
-    //});
+test('removePnode', function(t) {
+    var chash = fash.create({
+        log: LOG,
+        algorithm: 'sha256',
+        algorithmMax: fash.SHA_256_MAX,
+        pnodes: ['A', 'B', 'C', 'D', 'E'],
+        vnodes: numberOfVnodes,
+    });
 
-    //// remap all of A to B
-    //chash.remapVnode('B', chash.getVnodes('A'), function(err, ring, pnodes) {
-        //t.ifErr(err);
+    // remap all of A to B
+    chash.remapVnode('B', chash.getVnodes('A'), function(err, ring, pnodes) {
+        t.ifErr(err);
 
-        //chash.removePnode('A', function(err, ring) {
-            //t.ifErr(err);
-            //t.ok(chash.pnodes.indexOf('A') === -1, 'A should not exist in pnode array');
-            //t.notOk(chash.pnodeToVnodeMap_['A'], 'A should not exist in pnodeToVnodeMap');
-            //_verifyRing(chash, t, function() {
-                //t.end();
-            //});
-        //});
-    //});
-//});
+        chash.removePnode('A', function(err, ring) {
+            t.ifErr(err);
+            t.ok(chash.pnodes.indexOf('A') === -1, 'A should not exist in pnode array');
+            t.notOk(chash.pnodeToVnodeMap_['A'], 'A should not exist in pnodeToVnodeMap');
+            _verifyRing(chash, t, function() {
+                t.end();
+            });
+        });
+    });
+});
 
-//test('add new pnode', function(t) {
-    //var chash = fash.create({
-        //log: LOG,
-        //algorithm: 'sha256',
-        //algorithmMax: fash.SHA_256_MAX,
-        //pnodes: ['A', 'B', 'C', 'D', 'E'],
-        //vnodes: numberOfVnodes,
-    //});
+test('add new pnode', function(t) {
+    var chash = fash.create({
+        log: LOG,
+        algorithm: 'sha256',
+        algorithmMax: fash.SHA_256_MAX,
+        pnodes: ['A', 'B', 'C', 'D', 'E'],
+        vnodes: numberOfVnodes,
+    });
 
-    //var beforeRing = chash.serialize();
-    //// get vnodes from A
-    //var aVnodes = chash.getVnodes('A');
+    var beforeRing = JSON.parse(chash.serialize()).pnodeToVnodeMap;
+    // get vnodes from A
+    var aVnodes = chash.getVnodes('A');
 
-    //// remap all to F
-    //chash.remapVnode('F', aVnodes, function(err, ring, pnodes) {
-        //t.ifErr(err);
+    // remap all to B
+    chash.remapVnode('F', aVnodes, function(err, ring, pnodes) {
+        t.ifErr(err);
 
-        //var afterRing = chash.serialize();
-        //afterRing.forEach(function(elem) {
-            //t.ok((elem.pnode.toString() !== 'A'), 'pnode A should not exist in ring');
-        //});
+        var pnode = chash.pnodeToVnodeMap_['A'];
+        if (pnode) {
 
-        //beforeRing.forEach(function(elem, index, array) {
-            //if (elem.pnode.toString() === 'A') {
-                //t.ok(afterRing[index].pnode.toString() === 'F',
-                     //'vnode ' + index + 'should belong to F');
-            //}
-        //});
+            pnodeKeys = Object.keys(pnode);
+            t.ok((pnodeKeys.length === 0),
+            'pnode A should not map to any vnodes');
+        }
 
-        //_verifyRing(chash, t, function() {
-            //t.end();
-        //});
-    //});
-//});
+        var remmappedVnodes = beforeRing['A'];
 
-//test('add new pnode -- remap only subset of old pnode', function(t) {
-    //var chash = fash.create({
-        //log: LOG,
-        //algorithm: 'sha256',
-        //algorithmMax: fash.SHA_256_MAX,
-        //pnodes: ['A', 'B', 'C', 'D', 'E'],
-        //vnodes: numberOfVnodes,
-    //});
+        Object.keys(remmappedVnodes).forEach(function(vnode) {
+            t.ok((chash.vnodeToPnodeMap_[vnode] === 'F'),
+                 'vnode ' + vnode + ' should belong to F');
+        });
 
-    //var beforeRing = chash.serialize();
-    //// get vnodes from A
-    //var aVnodes = chash.getVnodes('A');
-    //aVnodes = aVnodes.slice(aVnodes.length / 2);
+        _verifyRing(chash, t, function() {
+            t.end();
+        });
+    });
+});
 
-    //// remap some of A's vnodes to F
-    //chash.remapVnode('F', aVnodes, function(err, ring, pnodes) {
-        //t.ifErr(err);
+test('add new pnode -- remap only subset of old pnode', function(t) {
+    var chash = fash.create({
+        log: LOG,
+        algorithm: 'sha256',
+        algorithmMax: fash.SHA_256_MAX,
+        pnodes: ['A', 'B', 'C', 'D', 'E'],
+        vnodes: numberOfVnodes,
+    });
 
-        //var afterRing = chash.serialize();
-        //afterRing.forEach(function(elem) {
-            //if (elem.pnode.toString() === 'A') {
-                //aVnodes.forEach(function(remappedVnode) {
-                    //t.ok(elem.vnode.toString() !== remappedVnode.toString(),
-                         //'remapped vnode ' + remappedVnode + ' should not belong to A');
-                //});
-            //}
-        //});
+    var beforeRing = chash.serialize();
+    // get vnodes from A
+    var aVnodes = chash.getVnodes('A');
+    aVnodes = aVnodes.slice(aVnodes.length / 2);
+    // remap some of A's vnodes to F
+    chash.remapVnode('F', aVnodes, function(err, ring, pnodes) {
+        t.ifErr(err);
 
-        //aVnodes.forEach(function(remappedVnode) {
-            //var pnode = afterRing[parseInt(remappedVnode, 10)].pnode.toString();
-            //t.ok(pnode === 'F', 'vnode ' + remappedVnode + 'should belong to F');
-        //});
-        //_verifyRing(chash, t, function() {
-            //t.end();
-        //});
-    //});
-//});
+        var aVnodesAfter = chash.pnodeToVnodeMap_['A'];
+        aVnodes.forEach(function(vnode) {
+            t.notOk(aVnodesAfter[vnode], 'remapped vnode ' + vnode + ' should not belong to A');
+        });
 
-//test('deserialize hash ring', function(t) {
-    //var chash = fash.create({
-        //log: LOG,
-        //algorithm: 'sha256',
-        //algorithmMax: fash.SHA_256_MAX,
-        //pnodes: ['A', 'B', 'C', 'D', 'E'],
-        //vnodes: numberOfVnodes,
-    //});
+        aVnodes.forEach(function(vnode) {
+            t.ok((chash.vnodeToPnodeMap_[vnode] === 'F'),
+                 'vnode ' + vnode + ' should belong to F');
+        });
 
-    //var chash1 = chash.serialize();
+        _verifyRing(chash, t, function() {
+            t.end();
+        });
+    });
+});
 
-    //var chash2 = fash.deserialize({
-        //log: LOG,
-        //algorithm: 'sha256',
-        //algorithmMax: fash.SHA_256_MAX,
-        //topology: chash1
-    //});
+test('deserialize hash ring', function(t) {
+    var chash = fash.create({
+        log: LOG,
+        algorithm: 'sha256',
+        algorithmMax: fash.SHA_256_MAX,
+        pnodes: ['A', 'B', 'C', 'D', 'E'],
+        vnodes: numberOfVnodes,
+    });
 
-    //_verifyRing(chash2, t, function() {
-        //t.end();
-    //});
-//});
+    var chash1 = chash.serialize();
 
-//test('hashing the same key', function(t) {
-    //var chash = fash.create({
-        //log: LOG,
-        //algorithm: 'sha256',
-        //algorithmMax: fash.SHA_256_MAX,
-        //vnodes: numberOfVnodes,
-        //pnodes: ['A', 'B', 'C', 'D', 'E'],
-        //random: true
-    //});
-    //for (var i = 0; i < 10; i++) {
-        //var random = Math.random().toString(33);
-        //var key = random.substring(Math.floor(Math.random() * random.length));
-        //var node1 = chash.getNode(key);
-        //var node2 = chash.getNode(key);
-        //t.equal(node1.pnode, node2.pnode);
-        //t.equal(node1.vnode, node2.vnode);
-    //}
+    var chash2 = fash.deserialize({
+        log: LOG,
+        algorithm: 'sha256',
+        algorithmMax: fash.SHA_256_MAX,
+        topology: chash1
+    });
 
-    //t.end();
-//});
+    _verifyRing(chash2, t, function() {
+        t.end();
+    });
+});
 
-//test('collision', function(t) {
-    //var caught;
-    //try {
-        //var chash = fash.create({
-            //log: LOG,
-            //algorithm: 'sha256',
-            //algorithmMax: fash.SHA_256_MAX,
-            //pnodes: ['a', 'a'],
-            //vnodes: numberOfVnodes,
-            //random: true
-        //});
-    //} catch (e) {
-        //caught = true;
-    //}
-    //t.ok(caught, 'collision of pnodes should throw');
-    //t.end();
-//});
+test('hashing the same key', function(t) {
+    var chash = fash.create({
+        log: LOG,
+        algorithm: 'sha256',
+        algorithmMax: fash.SHA_256_MAX,
+        pnodes: ['A', 'B', 'C', 'D', 'E'],
+        vnodes: numberOfVnodes,
+    });
+    for (var i = 0; i < 10; i++) {
+        var random = Math.random().toString(33);
+        var key = random.substring(Math.floor(Math.random() * random.length));
+        var node1 = chash.getNode(key);
+        var node2 = chash.getNode(key);
+        t.equal(node1.pnode, node2.pnode,
+                'hashing the same key twice should return the same pnode');
+        t.equal(node1.vnode, node2.vnode,
+                'hashing the same key twice should return the same vnode');
+    }
+
+    t.end();
+});
+
+test('collision', function(t) {
+    var caught;
+    try {
+        var chash = fash.create({
+            log: LOG,
+            algorithm: 'sha256',
+            algorithmMax: fash.SHA_256_MAX,
+            pnodes: ['a', 'a'],
+            vnodes: numberOfVnodes
+        });
+    } catch (e) {
+        caught = true;
+    }
+    t.ok(caught, 'collision of pnodes should throw');
+    t.end();
+});
 
 tap.tearDown(function() {
     process.exit(tap.output.results.fail);
