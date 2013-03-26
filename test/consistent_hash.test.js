@@ -9,22 +9,27 @@ var test = tap.test;
 var LOG = new Logger({
     name: 'consistent-hash-test',
     src: true,
-    //level: 'info',
-    //level: 'debug',
-    level: 'trace',
-    //level: process.LOG_LEVEL || 'info'
+    level: process.env.LOG_LEVEL || 'info'
 });
-var numberOfKeys = 10;
-var numberOfReplicas = 2;
-//var numberOfVnodes = 10000;
-var numberOfVnodes = 10;
+var numberOfKeys = process.env.NUMBER_OF_KEYS || 10;
+var numberOfVnodes = process.env.NUMBER_OF_VNODES || 10;
+var numberOfPnodes = process.env.NUMBER_OF_VNODES || 10;
+var PNODES = new Array(numberOfPnodes);
+
+test('before test', function(t) {
+    for (var i = 0; i < numberOfPnodes; i++) {
+        PNODES[i] = Math.random().toString(33).substr(2, 10);
+    }
+
+    PNODES.sort();
+    t.end();
+});
 
 test('new ring', function(t) {
     var chash = fash.create({
         log: LOG,
-        algorithm: 'sha256',
-        algorithmMax: fash.SHA_256_MAX,
-        pnodes: ['A', 'B', 'C', 'D', 'E'],
+        algorithm: fash.ALGORITHMS.SHA256,
+        pnodes: PNODES,
         vnodes: numberOfVnodes,
     });
 
@@ -36,32 +41,31 @@ test('new ring', function(t) {
 test('remapOnePnodeToAnother', function(t) {
     var chash = fash.create({
         log: LOG,
-        algorithm: 'sha256',
-        algorithmMax: fash.SHA_256_MAX,
-        pnodes: ['A', 'B', 'C', 'D', 'E'],
+        algorithm: fash.ALGORITHMS.SHA256,
+        pnodes: PNODES,
         vnodes: numberOfVnodes,
     });
 
     var beforeRing = JSON.parse(chash.serialize()).pnodeToVnodeMap;
     // get vnodes from A
-    var aVnodes = chash.getVnodes('A');
+    var aVnodes = chash.getVnodes(PNODES[0]);
 
     // remap all to B
-    chash.remapVnode('B', aVnodes, function(err, ring, pnodes) {
+    chash.remapVnode(PNODES[1], aVnodes, function(err, ring, pnodes) {
         t.ifErr(err);
 
-        var pnode = chash.pnodeToVnodeMap_['A'];
+        var pnode = chash.pnodeToVnodeMap_[PNODES[0]];
         if (pnode) {
 
             pnodeKeys = Object.keys(pnode);
             t.ok((pnodeKeys.length === 0),
-            'pnode A should not map to any vnodes');
+            'pnode ' + pnodes + ' should not map to any vnodes');
         }
 
-        var remmappedVnodes = beforeRing['A'];
+        var remappedVnodes = beforeRing[PNODES[0]];
 
-        Object.keys(remmappedVnodes).forEach(function(vnode) {
-            t.ok((chash.vnodeToPnodeMap_[vnode] === 'B'),
+        Object.keys(remappedVnodes).forEach(function(vnode) {
+            t.ok((chash.vnodeToPnodeMap_[vnode] === PNODES[1]),
                  'vnode ' + vnode + ' should belong to B');
         });
 
@@ -74,29 +78,27 @@ test('remapOnePnodeToAnother', function(t) {
 test('remapSomeVnodeToAnother', function(t) {
     var chash = fash.create({
         log: LOG,
-        algorithm: 'sha256',
-        algorithmMax: fash.SHA_256_MAX,
-        pnodes: ['A', 'B', 'C', 'D', 'E'],
+        algorithm: fash.ALGORITHMS.SHA256,
+        pnodes: PNODES,
         vnodes: numberOfVnodes,
     });
 
-    var beforeRing = JSON.parse(chash.serialize()).pnodeToVnodeMap;
     // get vnodes from A
-    var aVnodes = chash.getVnodes('A');
+    var aVnodes = chash.getVnodes(PNODES[0]);
     aVnodes = aVnodes.slice(aVnodes.length / 2);
 
     // remap some of A's vnodes to B
-    chash.remapVnode('B', aVnodes, function(err, ring, pnodes) {
+    chash.remapVnode(PNODES[1], aVnodes, function(err, ring, pnodes) {
         t.ifErr(err);
 
-        var aVnodesAfter = chash.pnodeToVnodeMap_['A'];
+        var aVnodesAfter = chash.pnodeToVnodeMap_[PNODES[0]];
         aVnodes.forEach(function(vnode) {
             t.notOk(aVnodesAfter[vnode],
                     'remapped vnode ' + vnode + ' should not belong to A');
         });
 
         aVnodes.forEach(function(vnode) {
-            t.ok((chash.vnodeToPnodeMap_[vnode] === 'B'),
+            t.ok((chash.vnodeToPnodeMap_[vnode] === PNODES[1]),
                  'vnode ' + vnode + ' should belong to B');
         });
 
@@ -109,20 +111,23 @@ test('remapSomeVnodeToAnother', function(t) {
 test('removePnode', function(t) {
     var chash = fash.create({
         log: LOG,
-        algorithm: 'sha256',
-        algorithmMax: fash.SHA_256_MAX,
-        pnodes: ['A', 'B', 'C', 'D', 'E'],
+        algorithm: fash.ALGORITHMS.SHA256,
+        pnodes: PNODES,
         vnodes: numberOfVnodes,
     });
 
     // remap all of A to B
-    chash.remapVnode('B', chash.getVnodes('A'), function(err, ring, pnodes) {
+    chash.remapVnode(PNODES[1], chash.getVnodes(PNODES[0]),
+                     function(err, ring, pnodes)
+    {
         t.ifErr(err);
 
-        chash.removePnode('A', function(err, ring) {
+        chash.removePnode(PNODES[0], function(err, ring) {
             t.ifErr(err);
-            t.ok(chash.pnodes.indexOf('A') === -1, 'A should not exist in pnode array');
-            t.notOk(chash.pnodeToVnodeMap_['A'], 'A should not exist in pnodeToVnodeMap');
+            t.ok(chash.pnodes.indexOf(PNODES[0]) === -1,
+                 'A should not exist in pnode array');
+            t.notOk(chash.pnodeToVnodeMap_[PNODES[0]],
+                'A should not exist in pnodeToVnodeMap');
             _verifyRing(chash, t, function() {
                 t.end();
             });
@@ -133,21 +138,20 @@ test('removePnode', function(t) {
 test('add new pnode', function(t) {
     var chash = fash.create({
         log: LOG,
-        algorithm: 'sha256',
-        algorithmMax: fash.SHA_256_MAX,
-        pnodes: ['A', 'B', 'C', 'D', 'E'],
+        algorithm: fash.ALGORITHMS.SHA256,
+        pnodes: PNODES,
         vnodes: numberOfVnodes,
     });
 
     var beforeRing = JSON.parse(chash.serialize()).pnodeToVnodeMap;
     // get vnodes from A
-    var aVnodes = chash.getVnodes('A');
+    var aVnodes = chash.getVnodes(PNODES[0]);
 
     // remap all to B
     chash.remapVnode('F', aVnodes, function(err, ring, pnodes) {
         t.ifErr(err);
 
-        var pnode = chash.pnodeToVnodeMap_['A'];
+        var pnode = chash.pnodeToVnodeMap_[PNODES[0]];
         if (pnode) {
 
             pnodeKeys = Object.keys(pnode);
@@ -155,7 +159,7 @@ test('add new pnode', function(t) {
             'pnode A should not map to any vnodes');
         }
 
-        var remmappedVnodes = beforeRing['A'];
+        var remmappedVnodes = beforeRing[PNODES[0]];
 
         Object.keys(remmappedVnodes).forEach(function(vnode) {
             t.ok((chash.vnodeToPnodeMap_[vnode] === 'F'),
@@ -171,23 +175,22 @@ test('add new pnode', function(t) {
 test('add new pnode -- remap only subset of old pnode', function(t) {
     var chash = fash.create({
         log: LOG,
-        algorithm: 'sha256',
-        algorithmMax: fash.SHA_256_MAX,
-        pnodes: ['A', 'B', 'C', 'D', 'E'],
+        algorithm: fash.ALGORITHMS.SHA256,
+        pnodes: PNODES,
         vnodes: numberOfVnodes,
     });
 
-    var beforeRing = chash.serialize();
     // get vnodes from A
-    var aVnodes = chash.getVnodes('A');
+    var aVnodes = chash.getVnodes(PNODES[0]);
     aVnodes = aVnodes.slice(aVnodes.length / 2);
     // remap some of A's vnodes to F
     chash.remapVnode('F', aVnodes, function(err, ring, pnodes) {
         t.ifErr(err);
 
-        var aVnodesAfter = chash.pnodeToVnodeMap_['A'];
+        var aVnodesAfter = chash.pnodeToVnodeMap_[PNODES[0]];
         aVnodes.forEach(function(vnode) {
-            t.notOk(aVnodesAfter[vnode], 'remapped vnode ' + vnode + ' should not belong to A');
+            t.notOk(aVnodesAfter[vnode], 'remapped vnode ' + vnode +
+                    ' should not belong to A');
         });
 
         aVnodes.forEach(function(vnode) {
@@ -204,9 +207,8 @@ test('add new pnode -- remap only subset of old pnode', function(t) {
 test('deserialize hash ring', function(t) {
     var chash = fash.create({
         log: LOG,
-        algorithm: 'sha256',
-        algorithmMax: fash.SHA_256_MAX,
-        pnodes: ['A', 'B', 'C', 'D', 'E'],
+        algorithm: fash.ALGORITHMS.SHA256,
+        pnodes: PNODES,
         vnodes: numberOfVnodes,
     });
 
@@ -214,8 +216,6 @@ test('deserialize hash ring', function(t) {
 
     var chash2 = fash.deserialize({
         log: LOG,
-        algorithm: 'sha256',
-        algorithmMax: fash.SHA_256_MAX,
         topology: chash1
     });
 
@@ -227,9 +227,8 @@ test('deserialize hash ring', function(t) {
 test('hashing the same key', function(t) {
     var chash = fash.create({
         log: LOG,
-        algorithm: 'sha256',
-        algorithmMax: fash.SHA_256_MAX,
-        pnodes: ['A', 'B', 'C', 'D', 'E'],
+        algorithm: fash.ALGORITHMS.SHA256,
+        pnodes: PNODES,
         vnodes: numberOfVnodes,
     });
     for (var i = 0; i < 10; i++) {
@@ -249,10 +248,9 @@ test('hashing the same key', function(t) {
 test('collision', function(t) {
     var caught;
     try {
-        var chash = fash.create({
+        fash.create({
             log: LOG,
-            algorithm: 'sha256',
-            algorithmMax: fash.SHA_256_MAX,
+            algorithm: fash.ALGORITHMS.SHA256,
             pnodes: ['a', 'a'],
             vnodes: numberOfVnodes
         });
@@ -291,7 +289,8 @@ var _verifyRing = function _verifyRing(chash, t, cb) {
 
             var index = parseInt(chash.findVnode(hash), 10);
             var nextNode;
-            // if we are at the last vnode, then skip checking for nextNode since there isn't one
+            // if we are at the last vnode, then skip checking for nextNode
+            // since there isn't one
             if (index < (numberOfVnodes - 1)) {
                 nextNode = bignum(chash.findHashspace(index + 1), 16);
             }
@@ -302,12 +301,15 @@ var _verifyRing = function _verifyRing(chash, t, cb) {
                  ' should be >= than \n' + currNode.toString(16));
             if (index < (numberOfVnodes - 1)) {
                 t.ok(hash.lt(nextNode), 'hash ' + hash + ' should be < than ' +
-                    nextNode + ' index is ' + index + ' node ' + util.inspect(node));
+                     nextNode + ' index is ' + index + ' node ' +
+                     util.inspect(node));
             }
 
             t.ok(node);
-            // assert node returned by getNode is the same as what we've calculated
-            t.equal(node.pnode, chash.vnodeToPnodeMap_[index.toString()], 'pnodes should match');
+            // assert node returned by getNode is the same as what we've
+            // calculated
+            t.equal(node.pnode, chash.vnodeToPnodeMap_[index.toString()],
+                    'pnodes should match');
             t.equal(node.vnode, index.toString(), 'vnodes should match');
     }
 
