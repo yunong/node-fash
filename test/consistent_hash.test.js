@@ -124,7 +124,7 @@ test('removePnode', function(t) {
 
         chash.removePnode(PNODES[0], function(err, ring) {
             t.ifErr(err);
-            t.ok(chash.pnodes.indexOf(PNODES[0]) === -1,
+            t.ok(chash.pnodes_.indexOf(PNODES[0]) === -1,
                  'A should not exist in pnode array');
             t.notOk(chash.pnodeToVnodeMap_[PNODES[0]],
                 'A should not exist in pnodeToVnodeMap');
