@@ -220,6 +220,17 @@ test('deserialize hash ring', function(t) {
     });
 
     _verifyRing(chash2, t, function() {
+
+        for (var i = 0; i < numberOfKeys; i++) {
+            var random = Math.random().toString(33);
+            var key = random.substring(Math.floor(Math.random() *
+                random.length));
+            var node1 = JSON.stringify(chash.getNode(key));
+            var node2 = JSON.stringify(chash2.getNode(key));
+            t.equal(node1, node2, 'hashed node from serialized and original ' +
+                    'ring should be equal');
+        }
+
         t.end();
     });
 });
@@ -278,41 +289,38 @@ var _verifyRing = function _verifyRing(chash, t, cb) {
 
     for (var i = 0; i < numberOfKeys; i++) {
         var random = Math.random().toString(33);
-        var key = random.substring(
-            Math.floor(Math.random() * random.length));
-            var node = chash.getNode(key);
+        var key = random.substring(Math.floor(Math.random() * random.length));
+        var node = chash.getNode(key);
 
-            var hash = crypto.createHash('sha256');
-            hash.update(key);
-            hash = hash.digest('hex');
-            hash = bignum(hash, 16);
+        var hash = crypto.createHash('sha256');
+        hash.update(key);
+        hash = hash.digest('hex');
+        hash = bignum(hash, 16);
 
-            var index = parseInt(chash.findVnode(hash), 10);
-            var nextNode;
-            // if we are at the last vnode, then skip checking for nextNode
-            // since there isn't one
-            if (index < (numberOfVnodes - 1)) {
-                nextNode = bignum(chash.findHashspace(index + 1), 16);
-            }
+        var index = parseInt(chash.findVnode(hash), 10);
+        var nextNode;
+        // if we are at the last vnode, then skip checking for nextNode since
+        // there isn't one
+        if (index < (numberOfVnodes - 1)) {
+            nextNode = bignum(chash.findHashspace(index + 1), 16);
+        }
 
-            var currNode = chash.findHashspace(index);
-            // assert hash is in between index + 1 and index
-            t.ok(hash.ge(currNode), 'hash ' + bignum(hash, 10).toString(16) +
-                 ' should be >= than \n' + currNode.toString(16));
-            if (index < (numberOfVnodes - 1)) {
-                t.ok(hash.lt(nextNode), 'hash ' + hash + ' should be < than ' +
-                     nextNode + ' index is ' + index + ' node ' +
-                     util.inspect(node));
-            }
+        var currNode = chash.findHashspace(index);
+        // assert hash is in between index + 1 and index
+        t.ok(hash.ge(currNode), 'hash ' + bignum(hash, 10).toString(16) +
+            ' should be >= than \n' + currNode.toString(16));
+        if (index < (numberOfVnodes - 1)) {
+            t.ok(hash.lt(nextNode), 'hash ' + hash + ' should be < than ' +
+                nextNode + ' index is ' + index + ' node ' +
+                util.inspect(node));
+        }
 
-            t.ok(node);
-            // assert node returned by getNode is the same as what we've
-            // calculated
-            t.equal(node.pnode, chash.vnodeToPnodeMap_[index.toString()],
-                    'pnodes should match');
-            t.equal(node.vnode, index.toString(), 'vnodes should match');
+        t.ok(node);
+        // assert node returned by getNode is the same as what we've calculated
+        t.equal(node.pnode, chash.vnodeToPnodeMap_[index.toString()],
+        'pnodes should match');
+        t.equal(node.vnode, index.toString(), 'vnodes should match');
     }
 
     return cb();
 };
-

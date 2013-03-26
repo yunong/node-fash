@@ -1,14 +1,21 @@
 {
   "author": "Yunong J Xiao <yjxiao@gmail.com>",
+  "contributors": [
+    {
+      "name": "Mark Cavage",
+      "email": "mcavage@gmail.com"
+    }
+  ],
   "name": "fash",
   "description": "A consistent hashing library for node",
   "keywords": [
-    "consistent hasing",
+    "consistent hashing",
     "hashing",
     "distributed",
-    "dynamo"
+    "dynamo",
+    "hash ring"
   ],
-  "version": "0.2.0",
+  "version": "1.0.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/yunong/node-fash.git"
@@ -23,8 +30,7 @@
   "dependencies": {
     "assert-plus": "0.1.2",
     "bignum": "0.5.4",
-    "bunyan": "*",
-    "levelup": "0.6.2"
+    "bunyan": "*"
   },
   "devDependencies": {
     "tap": "*",
