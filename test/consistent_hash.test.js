@@ -87,17 +87,34 @@ test('remapSomeVnodeToAnother', function(t) {
     var aVnodes = chash.getVnodes(PNODES[0]);
     aVnodes = aVnodes.slice(aVnodes.length / 2);
 
+    // get vnodes from B for later
+    var bVnodes = chash.getVnodes(PNODES[1]);
+
     // remap some of A's vnodes to B
     chash.remapVnode(PNODES[1], aVnodes, function(err, ring, pnodes) {
         t.ifErr(err);
 
         var aVnodesAfter = chash.pnodeToVnodeMap_[PNODES[0]];
+        var bVnodesAfter = chash.pnodeToVnodeMap_[PNODES[1]];
+        // check A doesn't contain the remapped nodes
         aVnodes.forEach(function(vnode) {
             t.notOk(aVnodesAfter[vnode],
                     'remapped vnode ' + vnode + ' should not belong to A');
         });
 
+        //// check A still contains its non-remapped nodes
+        //aVnodesAfter.forEach(function(vnode) {
+
+        //});
+
+        // check B contains the remapped nodes
         aVnodes.forEach(function(vnode) {
+            t.ok((chash.vnodeToPnodeMap_[vnode].pnode === PNODES[1]),
+                 'vnode ' + vnode + ' should belong to B');
+        });
+
+        // check B still contains vnodes from its old self.
+        bVnodes.forEach(function(vnode) {
             t.ok((chash.vnodeToPnodeMap_[vnode].pnode === PNODES[1]),
                  'vnode ' + vnode + ' should belong to B');
         });
