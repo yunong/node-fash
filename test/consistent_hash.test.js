@@ -65,7 +65,7 @@ test('remapOnePnodeToAnother', function(t) {
         var remappedVnodes = beforeRing[PNODES[0]];
 
         Object.keys(remappedVnodes).forEach(function(vnode) {
-            t.ok((chash.vnodeToPnodeMap_[vnode] === PNODES[1]),
+            t.ok((chash.vnodeToPnodeMap_[vnode].pnode === PNODES[1]),
                  'vnode ' + vnode + ' should belong to B');
         });
 
@@ -98,7 +98,7 @@ test('remapSomeVnodeToAnother', function(t) {
         });
 
         aVnodes.forEach(function(vnode) {
-            t.ok((chash.vnodeToPnodeMap_[vnode] === PNODES[1]),
+            t.ok((chash.vnodeToPnodeMap_[vnode].pnode === PNODES[1]),
                  'vnode ' + vnode + ' should belong to B');
         });
 
@@ -162,7 +162,7 @@ test('add new pnode', function(t) {
         var remmappedVnodes = beforeRing[PNODES[0]];
 
         Object.keys(remmappedVnodes).forEach(function(vnode) {
-            t.ok((chash.vnodeToPnodeMap_[vnode] === 'F'),
+            t.ok((chash.vnodeToPnodeMap_[vnode].pnode === 'F'),
                  'vnode ' + vnode + ' should belong to F');
         });
 
@@ -194,7 +194,8 @@ test('add new pnode -- remap only subset of old pnode', function(t) {
         });
 
         aVnodes.forEach(function(vnode) {
-            t.ok((chash.vnodeToPnodeMap_[vnode] === 'F'),
+            console.log(chash.vnodeToPnodeMap_[vnode]);
+            t.ok((chash.vnodeToPnodeMap_[vnode].pnode === 'F'),
                  'vnode ' + vnode + ' should belong to F');
         });
 
@@ -317,7 +318,7 @@ var _verifyRing = function _verifyRing(chash, t, cb) {
 
         t.ok(node);
         // assert node returned by getNode is the same as what we've calculated
-        t.equal(node.pnode, chash.vnodeToPnodeMap_[index.toString()],
+        t.equal(node.pnode, chash.vnodeToPnodeMap_[index.toString()].pnode,
         'pnodes should match');
         t.equal(node.vnode, index.toString(), 'vnodes should match');
     }
