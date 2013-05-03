@@ -9,10 +9,10 @@ var test = tap.test;
 var LOG = new Logger({
     name: 'consistent-hash-test',
     src: true,
-    level: process.env.LOG_LEVEL || 'info'
+    level: process.env.LOG_LEVEL || 'warn'
 });
 var numberOfKeys = process.env.NUMBER_OF_KEYS || 10;
-var numberOfVnodes = process.env.NUMBER_OF_VNODES || 10;
+var numberOfVnodes = process.env.NUMBER_OF_VNODES || 100;
 var numberOfPnodes = process.env.NUMBER_OF_VNODES || 10;
 var PNODES = new Array(numberOfPnodes);
 
@@ -50,23 +50,29 @@ test('remapOnePnodeToAnother', function(t) {
     // get vnodes from A
     var aVnodes = chash.getVnodes(PNODES[0]);
 
+    // get vnodes from B for later
+    var originalBVnodes = chash.getVnodes(PNODES[1]).slice(0);
     // remap all to B
     chash.remapVnode(PNODES[1], aVnodes, function(err, ring, pnodes) {
         t.ifErr(err);
 
         var pnode = chash.pnodeToVnodeMap_[PNODES[0]];
-        if (pnode) {
-
-            pnodeKeys = Object.keys(pnode);
-            t.ok((pnodeKeys.length === 0),
-            'pnode ' + pnodes + ' should not map to any vnodes');
-        }
+        t.ok(pnode, 'A pnode should still exist even if it has no vnodes');
+        pnodeKeys = Object.keys(pnode);
+        t.ok((pnodeKeys.length === 0),
+        'pnode ' + pnodes + ' should not map to any vnodes');
 
         var remappedVnodes = beforeRing[PNODES[0]];
 
         Object.keys(remappedVnodes).forEach(function(vnode) {
             t.ok((chash.vnodeToPnodeMap_[vnode].pnode === PNODES[1]),
                  'vnode ' + vnode + ' should belong to B');
+        });
+
+        // check B still contains vnodes from its old self.
+        originalBVnodes.forEach(function(vnode) {
+            t.ok((chash.vnodeToPnodeMap_[vnode].pnode === PNODES[1]),
+                 'vnode ' + vnode + ' should still belong to B');
         });
 
         _verifyRing(chash, t, function() {
@@ -85,27 +91,34 @@ test('remapSomeVnodeToAnother', function(t) {
 
     // get vnodes from A
     var aVnodes = chash.getVnodes(PNODES[0]);
-    aVnodes = aVnodes.slice(aVnodes.length / 2);
+    var leftOverAVnodes = aVnodes.slice(0);
+    aVnodes = leftOverAVnodes.splice(leftOverAVnodes.length / 2);
 
     // get vnodes from B for later
-    var bVnodes = chash.getVnodes(PNODES[1]);
+    var originalBVnodes = chash.getVnodes(PNODES[1]).slice(0);
 
     // remap some of A's vnodes to B
     chash.remapVnode(PNODES[1], aVnodes, function(err, ring, pnodes) {
         t.ifErr(err);
 
         var aVnodesAfter = chash.pnodeToVnodeMap_[PNODES[0]];
+        t.ok((Object.keys(aVnodesAfter).length >= 1),
+            'A should contain at least one vnode after partial remap');
         var bVnodesAfter = chash.pnodeToVnodeMap_[PNODES[1]];
+        t.ok((Object.keys(bVnodesAfter).length >= 1),
+            'B should contain at least one vnode after partial remap');
         // check A doesn't contain the remapped nodes
         aVnodes.forEach(function(vnode) {
             t.notOk(aVnodesAfter[vnode],
                     'remapped vnode ' + vnode + ' should not belong to A');
         });
 
-        //// check A still contains its non-remapped nodes
-        //aVnodesAfter.forEach(function(vnode) {
-
-        //});
+        // check A still contains its non-remapped nodes
+        console.log(leftOverAVnodes);
+        leftOverAVnodes.forEach(function(vnode) {
+            t.ok((chash.vnodeToPnodeMap_[vnode].pnode === PNODES[0]),
+                 'vnode ' + vnode + ' should still belong to A');
+        });
 
         // check B contains the remapped nodes
         aVnodes.forEach(function(vnode) {
@@ -114,9 +127,9 @@ test('remapSomeVnodeToAnother', function(t) {
         });
 
         // check B still contains vnodes from its old self.
-        bVnodes.forEach(function(vnode) {
+        originalBVnodes.forEach(function(vnode) {
             t.ok((chash.vnodeToPnodeMap_[vnode].pnode === PNODES[1]),
-                 'vnode ' + vnode + ' should belong to B');
+                 'vnode ' + vnode + ' should still belong to B');
         });
 
         _verifyRing(chash, t, function() {
@@ -164,17 +177,15 @@ test('add new pnode', function(t) {
     // get vnodes from A
     var aVnodes = chash.getVnodes(PNODES[0]);
 
-    // remap all to B
+    // remap all to F
     chash.remapVnode('F', aVnodes, function(err, ring, pnodes) {
         t.ifErr(err);
 
         var pnode = chash.pnodeToVnodeMap_[PNODES[0]];
-        if (pnode) {
-
-            pnodeKeys = Object.keys(pnode);
-            t.ok((pnodeKeys.length === 0),
-            'pnode A should not map to any vnodes');
-        }
+        t.ok(pnode,
+            'pnode A should still exist even if it doesn\'t have vnodes');
+        pnodeKeys = Object.keys(pnode);
+        t.ok((pnodeKeys.length === 0), 'pnode A should not map to any vnodes');
 
         var remmappedVnodes = beforeRing[PNODES[0]];
 
@@ -199,17 +210,29 @@ test('add new pnode -- remap only subset of old pnode', function(t) {
 
     // get vnodes from A
     var aVnodes = chash.getVnodes(PNODES[0]);
-    aVnodes = aVnodes.slice(aVnodes.length / 2);
+    var leftOverAVnodes = aVnodes.slice(0);
+    aVnodes = leftOverAVnodes.splice(leftOverAVnodes.length / 2);
+
     // remap some of A's vnodes to F
     chash.remapVnode('F', aVnodes, function(err, ring, pnodes) {
         t.ifErr(err);
 
         var aVnodesAfter = chash.pnodeToVnodeMap_[PNODES[0]];
+        t.ok((Object.keys(aVnodesAfter).length >= 1),
+            'A should contain at least one vnode after partial remap');
+        // check A doesn't contain the remapped nodes
         aVnodes.forEach(function(vnode) {
-            t.notOk(aVnodesAfter[vnode], 'remapped vnode ' + vnode +
-                    ' should not belong to A');
+            t.notOk(aVnodesAfter[vnode],
+                    'remapped vnode ' + vnode + ' should not belong to A');
         });
 
+        // check A still contains its non-remapped nodes
+        leftOverAVnodes.forEach(function(vnode) {
+            t.ok((chash.vnodeToPnodeMap_[vnode].pnode === PNODES[0]),
+                 'vnode ' + vnode + ' should still belong to A');
+        });
+
+        // check F contains the remapped nodes from A
         aVnodes.forEach(function(vnode) {
             console.log(chash.vnodeToPnodeMap_[vnode]);
             t.ok((chash.vnodeToPnodeMap_[vnode].pnode === 'F'),
