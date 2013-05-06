@@ -261,7 +261,6 @@ test('deserialize hash ring', function(t) {
     });
 
     _verifyRing(chash2, t, function() {
-
         for (var i = 0; i < numberOfKeys; i++) {
             var random = Math.random().toString(33);
             var key = random.substring(Math.floor(Math.random() *
@@ -328,6 +327,7 @@ var _verifyRing = function _verifyRing(chash, t, cb) {
         map[key] = 1;
     });
 
+    // randomly pick some keys and see if they hash to their expected values
     for (var i = 0; i < numberOfKeys; i++) {
         var random = Math.random().toString(33);
         var key = random.substring(Math.floor(Math.random() * random.length));
@@ -359,7 +359,7 @@ var _verifyRing = function _verifyRing(chash, t, cb) {
         t.ok(node);
         // assert node returned by getNode is the same as what we've calculated
         t.equal(node.pnode, chash.vnodeToPnodeMap_[index.toString()].pnode,
-        'pnodes should match');
+            'pnodes should match');
         t.equal(node.vnode, index.toString(), 'vnodes should match');
     }
 
