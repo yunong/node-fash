@@ -357,6 +357,48 @@ test('add data -- serialize/deserialize', function(t) {
     });
 });
 
+test('add data -- overwrite', function(t) {
+    var chash = fash.create({
+        log: LOG,
+        algorithm: fash.ALGORITHMS.SHA256,
+        pnodes: PNODES,
+        vnodes: NUMBER_OF_VNODES,
+    });
+
+    var vnode = parseInt(NUMBER_OF_VNODES * Math.random(), 10);
+    chash.addData(vnode, 'foo');
+    chash.addData(vnode, 'bar');
+    t.equal(chash.vnodeToPnodeMap_[vnode].data, 'bar',
+        'replaced data should match put data');
+    var pnode = chash.vnodeToPnodeMap_[vnode].pnode;
+    t.equal(chash.pnodeToVnodeMap_[pnode][vnode], 'bar',
+        'replaced data should match put data');
+    _verifyRing(chash, t, function() {
+        t.end();
+    });
+});
+
+test('add data -- overwrite with null', function(t) {
+    var chash = fash.create({
+        log: LOG,
+        algorithm: fash.ALGORITHMS.SHA256,
+        pnodes: PNODES,
+        vnodes: NUMBER_OF_VNODES,
+    });
+
+    var vnode = parseInt(NUMBER_OF_VNODES * Math.random(), 10);
+    chash.addData(vnode, 'foo');
+    chash.addData(vnode, null);
+    t.equal(chash.vnodeToPnodeMap_[vnode].data, null,
+        'deleted data should be null');
+    var pnode = chash.vnodeToPnodeMap_[vnode].pnode;
+    t.equal(chash.pnodeToVnodeMap_[pnode][vnode], null,
+        'deleted data should be null');
+    _verifyRing(chash, t, function() {
+        t.end();
+    });
+});
+
 test('hashing the same key', function(t) {
     var chash = fash.create({
         log: LOG,
