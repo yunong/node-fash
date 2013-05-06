@@ -150,6 +150,28 @@ vnodes to another pnode, and then removing the pnode.
         });
     });
 
+## Adding Optional Data to a Virtual Node
+Sometimes, it might be helpful to associate state with a set of vnodes. An
+example of this would be during routine system maintenance, an administrator
+may want to set a certain set of vnodes to read only, and then set them back to
+write mode after the maintenance has completed.
+
+Fash gives enables you to add arbitrary objects to vnodes by invoking the
+`addData` function.
+
+    chash.addData(10, 'foo');
+
+Subsequence `chash.getNode()` invocations which map to vnode 10 will return:
+
+    {
+        pnode: 'A',
+        vnode: 10,
+        data: 'foo'
+    }
+
+The data associated with a virtual node is persistent across serializations and
+remaps.
+
 ## Serializing and Persisting the Ring Toplogy
 At any time, the ring toplogy can be accessed by:
 
