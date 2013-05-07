@@ -295,7 +295,7 @@ test('add data', function(t) {
     });
 });
 
-test('add data -- remap vnode to different node', function(t) {
+test('add data -- remap vnode to different pnode', function(t) {
     var chash = fash.create({
         log: LOG,
         algorithm: fash.ALGORITHMS.SHA256,
@@ -304,11 +304,17 @@ test('add data -- remap vnode to different node', function(t) {
     });
 
     var vnode = parseInt(NUMBER_OF_VNODES * Math.random(), 10);
-    var pnode = chash.vnodeToPnodeMap_[vnode].pnode;
+    var originalPnode = chash.vnodeToPnodeMap_[vnode].pnode;
+    var pnode;
+    for (var i = 0; i < PNODES.length; i++) {
+        if (PNODES[i] !== originalPnode) {
+            pnode = PNODES[i];
+        }
+    }
     chash.addData(vnode, 'foo');
 
     // remap all to B
-    chash.remapVnode(pnode, vnode, function(err, ring, pnodes) {
+    chash.remapVnode(pnode, [vnode], function(err, ring, pnodes) {
         t.ifErr(err);
         t.equal(chash.vnodeToPnodeMap_[vnode].data, 'foo',
             'stored data should match put data');
@@ -420,6 +426,8 @@ test('hashing the same key', function(t) {
     t.end();
 });
 
+/// Negative tests
+
 test('collision', function(t) {
     var caught;
     try {
@@ -433,6 +441,73 @@ test('collision', function(t) {
         caught = true;
     }
     t.ok(caught, 'collision of pnodes should throw');
+    t.end();
+});
+
+test('remap non-existent vnodes', function(t) {
+    var caught;
+    var chash = fash.create({
+        log: LOG,
+        algorithm: fash.ALGORITHMS.SHA256,
+        pnodes: PNODES,
+        vnodes: NUMBER_OF_VNODES,
+    });
+
+    try {
+        chash.remapVnode(PNODES[0], NUMBER_OF_VNODES + 100);
+    } catch (e) {
+        caught = true;
+    }
+
+    t.ok(caught, 'remapping non-existent vnodes should throw');
+    t.end();
+});
+
+test('remap vnode to the same pnode', function(t) {
+    var caught;
+    var chash = fash.create({
+        log: LOG,
+        algorithm: fash.ALGORITHMS.SHA256,
+        pnodes: PNODES,
+        vnodes: NUMBER_OF_VNODES,
+    });
+    var vnode = parseInt(NUMBER_OF_VNODES * Math.random(), 10);
+    var originalPnode = chash.vnodeToPnodeMap_[vnode].pnode;
+    var pnode;
+    for (var i = 0; i < PNODES.length; i++) {
+        if (PNODES[i] !== originalPnode) {
+            pnode = PNODES[i];
+        }
+    }
+
+    try {
+        chash.remapVnode(pnode, [vnode, vnode]);
+    } catch (e) {
+        caught = true;
+    }
+
+    t.ok(caught, 'remapping vnodes to the original pnode should throw');
+    t.end();
+});
+
+test('remap the same vnode more than once', function(t) {
+    var caught;
+    var chash = fash.create({
+        log: LOG,
+        algorithm: fash.ALGORITHMS.SHA256,
+        pnodes: PNODES,
+        vnodes: NUMBER_OF_VNODES,
+    });
+    var vnode = parseInt(NUMBER_OF_VNODES * Math.random(), 10);
+    var originalPnode = chash.vnodeToPnodeMap_[vnode].pnode;
+
+    try {
+        chash.remapVnode(originalPnode, vnode);
+    } catch (e) {
+        caught = true;
+    }
+
+    t.ok(caught, 'remapping the same vnode more than once should throw');
     t.end();
 });
 
