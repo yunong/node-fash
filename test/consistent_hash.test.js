@@ -158,6 +158,11 @@ test('removePnode', function(t) {
                  'A should not exist in pnode array');
             t.notOk(chash.pnodeToVnodeMap_[PNODES[0]],
                 'A should not exist in pnodeToVnodeMap');
+            // other pnodes should still exist
+            t.equal(chash.pnodes_.length, PNODES.length - 1,
+                'should have 1 less pnode after remove');
+            t.equal(Object.keys(chash.pnodeToVnodeMap_).length,
+                PNODES.length - 1, 'should have 1 less pnode after remove');
             _verifyRing(chash, t, function() {
                 t.end();
             });
@@ -525,6 +530,8 @@ var _verifyRing = function _verifyRing(chash, t, cb) {
         t.notOk(map[key], 'hashspace should not exist');
         map[key] = 1;
     });
+    t.equal(chash.pnodes_.length, Object.keys(chash.pnodeToVnodeMap_).length,
+            'pnodes_ and pvmap must have same length');
 
     // randomly pick some keys and see if they hash to their expected values
     for (var i = 0; i < NUMBER_OF_KEYS; i++) {
