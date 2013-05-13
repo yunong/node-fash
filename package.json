@@ -30,7 +30,9 @@
   "dependencies": {
     "assert-plus": "0.1.2",
     "bignum": "0.6.0",
-    "bunyan": "*"
+    "bunyan": "*",
+    "cmdln": "1.1.1",
+    "dashdash": "1.2.1"
   },
   "devDependencies": {
     "tap": "*",
