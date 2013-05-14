@@ -459,7 +459,7 @@ test('remap non-existent vnodes', function(t) {
     });
 
     try {
-        chash.remapVnode(PNODES[0], NUMBER_OF_VNODES + 100);
+        chash.remapVnode(PNODES[0], [NUMBER_OF_VNODES + 100]);
     } catch (e) {
         caught = true;
     }
