@@ -114,7 +114,6 @@ test('remapSomeVnodeToAnother', function(t) {
         });
 
         // check A still contains its non-remapped nodes
-        console.log(leftOverAVnodes);
         leftOverAVnodes.forEach(function(vnode) {
             t.ok((chash.vnodeToPnodeMap_[vnode].pnode === PNODES[0]),
                  'vnode ' + vnode + ' should still belong to A');
@@ -239,7 +238,6 @@ test('add new pnode -- remap only subset of old pnode', function(t) {
 
         // check F contains the remapped nodes from A
         aVnodes.forEach(function(vnode) {
-            console.log(chash.vnodeToPnodeMap_[vnode]);
             t.ok((chash.vnodeToPnodeMap_[vnode].pnode === 'F'),
                  'vnode ' + vnode + ' should belong to F');
         });
@@ -345,7 +343,6 @@ test('add data -- serialize/deserialize', function(t) {
 
     var chash1 = chash.serialize();
     t.ok(JSON.parse(chash1).version, 'serialized hash should contain version');
-    console.log(chash1);
 
     var chash2 = fash.deserialize({
         log: LOG,
@@ -434,6 +431,33 @@ test('hashing the same key', function(t) {
 });
 
 /// Negative tests
+
+test('deserialize newer version', function(t) {
+    var chash = fash.create({
+        log: LOG,
+        algorithm: fash.ALGORITHMS.SHA256,
+        pnodes: PNODES,
+        vnodes: NUMBER_OF_VNODES,
+    });
+
+    var chash1 = chash.serialize();
+    chash1 = JSON.parse(chash1);
+    chash1.version = '123123123123123123123123123123123.123123123123.12312321';
+    chash1 = JSON.stringify(chash1);
+
+    var caught;
+    try {
+        var chash2 = fash.deserialize({
+            log: LOG,
+            topology: chash1
+        });
+    } catch (e) {
+        caught = true;
+    }
+
+    t.ok(caught, 'deserializing newer version should throw')
+    t.end();
+});
 
 test('collision', function(t) {
     var caught;
