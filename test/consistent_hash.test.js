@@ -344,6 +344,8 @@ test('add data -- serialize/deserialize', function(t) {
     chash.addData(vnode, 'foo');
 
     var chash1 = chash.serialize();
+    t.ok(JSON.parse(chash1).version, 'serialized hash should contain version');
+    console.log(chash1);
 
     var chash2 = fash.deserialize({
         log: LOG,
