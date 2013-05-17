@@ -40,6 +40,6 @@
     "bunyan": "*"
   },
   "scripts": {
-    "test": "./node_modules/.bin/tap test/*.test.js"
+    "test": "./node_modules/.bin/nodeunit test/*.test.js"
   }
 }
