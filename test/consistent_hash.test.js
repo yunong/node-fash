@@ -28,7 +28,7 @@ test('before test', function(t) {
 test('new ring', function(t) {
     var chash = fash.create({
         log: LOG,
-        algorithm: fash.ALGORITHMS.SHA256,
+        algorithm: 'sha256',
         pnodes: PNODES,
         vnodes: NUMBER_OF_VNODES,
     });
@@ -41,7 +41,7 @@ test('new ring', function(t) {
 test('remapOnePnodeToAnother', function(t) {
     var chash = fash.create({
         log: LOG,
-        algorithm: fash.ALGORITHMS.SHA256,
+        algorithm: 'sha256',
         pnodes: PNODES,
         vnodes: NUMBER_OF_VNODES,
     });
@@ -84,7 +84,7 @@ test('remapOnePnodeToAnother', function(t) {
 test('remapSomeVnodeToAnother', function(t) {
     var chash = fash.create({
         log: LOG,
-        algorithm: fash.ALGORITHMS.SHA256,
+        algorithm: 'sha256',
         pnodes: PNODES,
         vnodes: NUMBER_OF_VNODES,
     });
@@ -140,7 +140,7 @@ test('remapSomeVnodeToAnother', function(t) {
 test('removePnode', function(t) {
     var chash = fash.create({
         log: LOG,
-        algorithm: fash.ALGORITHMS.SHA256,
+        algorithm: 'sha256',
         pnodes: PNODES,
         vnodes: NUMBER_OF_VNODES,
     });
@@ -172,7 +172,7 @@ test('removePnode', function(t) {
 test('add new pnode', function(t) {
     var chash = fash.create({
         log: LOG,
-        algorithm: fash.ALGORITHMS.SHA256,
+        algorithm: 'sha256',
         pnodes: PNODES,
         vnodes: NUMBER_OF_VNODES,
     });
@@ -207,7 +207,7 @@ test('add new pnode', function(t) {
 test('add new pnode -- remap only subset of old pnode', function(t) {
     var chash = fash.create({
         log: LOG,
-        algorithm: fash.ALGORITHMS.SHA256,
+        algorithm: 'sha256',
         pnodes: PNODES,
         vnodes: NUMBER_OF_VNODES,
     });
@@ -251,7 +251,7 @@ test('add new pnode -- remap only subset of old pnode', function(t) {
 test('deserialize hash ring', function(t) {
     var chash = fash.create({
         log: LOG,
-        algorithm: fash.ALGORITHMS.SHA256,
+        algorithm: 'sha256',
         pnodes: PNODES,
         vnodes: NUMBER_OF_VNODES,
     });
@@ -281,7 +281,7 @@ test('deserialize hash ring', function(t) {
 test('add data', function(t) {
     var chash = fash.create({
         log: LOG,
-        algorithm: fash.ALGORITHMS.SHA256,
+        algorithm: 'sha256',
         pnodes: PNODES,
         vnodes: NUMBER_OF_VNODES,
     });
@@ -301,7 +301,7 @@ test('add data', function(t) {
 test('add data -- remap vnode to different pnode', function(t) {
     var chash = fash.create({
         log: LOG,
-        algorithm: fash.ALGORITHMS.SHA256,
+        algorithm: 'sha256',
         pnodes: PNODES,
         vnodes: NUMBER_OF_VNODES,
     });
@@ -332,7 +332,7 @@ test('add data -- remap vnode to different pnode', function(t) {
 test('add data -- serialize/deserialize', function(t) {
     var chash = fash.create({
         log: LOG,
-        algorithm: fash.ALGORITHMS.SHA256,
+        algorithm: 'sha256',
         pnodes: PNODES,
         vnodes: NUMBER_OF_VNODES,
     });
@@ -370,7 +370,7 @@ test('add data -- serialize/deserialize', function(t) {
 test('add data -- overwrite', function(t) {
     var chash = fash.create({
         log: LOG,
-        algorithm: fash.ALGORITHMS.SHA256,
+        algorithm: 'sha256',
         pnodes: PNODES,
         vnodes: NUMBER_OF_VNODES,
     });
@@ -391,7 +391,7 @@ test('add data -- overwrite', function(t) {
 test('add data -- overwrite with null', function(t) {
     var chash = fash.create({
         log: LOG,
-        algorithm: fash.ALGORITHMS.SHA256,
+        algorithm: 'sha256',
         pnodes: PNODES,
         vnodes: NUMBER_OF_VNODES,
     });
@@ -412,7 +412,7 @@ test('add data -- overwrite with null', function(t) {
 test('hashing the same key', function(t) {
     var chash = fash.create({
         log: LOG,
-        algorithm: fash.ALGORITHMS.SHA256,
+        algorithm: 'sha256',
         pnodes: PNODES,
         vnodes: NUMBER_OF_VNODES,
     });
@@ -435,7 +435,7 @@ test('hashing the same key', function(t) {
 test('deserialize newer version', function(t) {
     var chash = fash.create({
         log: LOG,
-        algorithm: fash.ALGORITHMS.SHA256,
+        algorithm: 'sha256',
         pnodes: PNODES,
         vnodes: NUMBER_OF_VNODES,
     });
@@ -464,7 +464,7 @@ test('collision', function(t) {
     try {
         fash.create({
             log: LOG,
-            algorithm: fash.ALGORITHMS.SHA256,
+            algorithm: 'sha256',
             pnodes: ['a', 'a'],
             vnodes: NUMBER_OF_VNODES
         });
@@ -479,7 +479,7 @@ test('remap non-existent vnodes', function(t) {
     var caught;
     var chash = fash.create({
         log: LOG,
-        algorithm: fash.ALGORITHMS.SHA256,
+        algorithm: 'sha256',
         pnodes: PNODES,
         vnodes: NUMBER_OF_VNODES,
     });
@@ -498,7 +498,7 @@ test('remap vnode to the same pnode', function(t) {
     var caught;
     var chash = fash.create({
         log: LOG,
-        algorithm: fash.ALGORITHMS.SHA256,
+        algorithm: 'sha256',
         pnodes: PNODES,
         vnodes: NUMBER_OF_VNODES,
     });
@@ -525,7 +525,7 @@ test('remap the same vnode more than once', function(t) {
     var caught;
     var chash = fash.create({
         log: LOG,
-        algorithm: fash.ALGORITHMS.SHA256,
+        algorithm: 'sha256',
         pnodes: PNODES,
         vnodes: NUMBER_OF_VNODES,
     });
