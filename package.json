@@ -36,7 +36,6 @@
     "verror": "1.3.6"
   },
   "devDependencies": {
-    "tap": "*",
     "nodeunit": "0.8.0",
     "bunyan": "*"
   },
