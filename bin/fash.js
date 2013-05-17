@@ -49,7 +49,7 @@ Fash.prototype.do_create = function(subcmd, opts, args, callback) {
     var pnodes = opts.p.split(' ');
     var chash = fash.create({
         log: self.log,
-        algorithm: fash.ALGORITHMS.SHA256,
+        algorithm: opts.a || 'sha256',
         pnodes: pnodes,
         vnodes: opts.v
     });
@@ -66,6 +66,10 @@ Fash.prototype.do_create.options = [{
     names: [ 'p', 'pnode' ],
     type: 'string',
     help: 'physical node names'
+}, {
+    names: [ 'a', 'algorithm' ],
+    type: 'string',
+    help: 'the algorithm to use'
 }];
 Fash.prototype.do_create.help = (
     'create a consistent hash ring.\n'
