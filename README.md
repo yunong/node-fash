@@ -30,7 +30,7 @@ of pnodes by re-mapping the vnode assignments.
 
     var chash = fash.create({
         log: LOG, // optional [bunyan](https://github.com/trentm/node-bunyan) log object.
-        algorithm: fash.ALGORITHMS.SHA256, // Can be any algorithm supported by openssl.
+        algorithm: 'sha-256', // Can be any algorithm supported by openssl.
         pnodes: ['A', 'B', 'C', 'D', 'E'], // The set of physical nodes to insert into the ring.
         vnodes: 1000000 // The virtual nodes to place onto the ring. Once set, this can't be changed for the lifetime of the ring.
     });
@@ -66,7 +66,7 @@ consistent as well.
 
     var chash = fash.create({
         log: LOG,
-        algorithm: fash.ALGORITHMS.SHA256,
+        algorithm: 'sha256',
         pnodes: ['A', 'B', 'C', 'D', 'E'],
         vnodes: 100000
     });
@@ -98,7 +98,7 @@ slow.
 
     var chash = fash.create({
         log: LOG,
-        algorithm: fash.ALGORITHMS.SHA256,
+        algorithm: 'sha256',
         pnodes: ['A', 'B', 'C', 'D', 'E'],
         vnodes: 100000
     });
@@ -128,7 +128,7 @@ vnodes to another pnode, and then removing the pnode.
 
     var chash = fash.create({
             log: LOG,
-            algorithm: fash.ALGORITHMS.SHA256,
+            algorithm: 'sha256',
             pnodes: ['A', 'B', 'C', 'D', 'E'],
             vnodes: 10000
     });
@@ -199,7 +199,7 @@ mentioned in the earlier bootstrapping section.
 
     var chash = fash.create({
        log: LOG,
-       algorithm: fash.ALGORITHMS.SHA256,
+       algorithm: 'sha256',
        pnodes: ['A', 'B', 'C', 'D', 'E'],
        vnodes: 10000
     });
