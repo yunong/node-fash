@@ -45,13 +45,11 @@ to vnodes, see the later section on serialization.
 
 ## Remapping Pnodes in the Ring
 Fash gives you the ability to add and rebalance the pnodes in the ring by using
-the remapNode() function, which will emit an 'update' event when done, 'error'
-event on error, and also return an optional callback.
+the remapNode() function, which returns an optional callback.
 
 You can also remove pnodes from the ring, but **you must first rebalance the
 ring by reassigning its vnodes to other pnodes** via remapVnode(). Then you can
-invoke removeNode(), which will emit an 'update' event when done, an 'error'
-even on error, and also return an optional callback.
+invoke removeNode(), which will eturn an optional callback.
 
 You can assign an arbitrary number of vnodes to the new vnode -- also -- the
 pnode can be a new node, or an existing one.  Again, as long as the order of
@@ -78,15 +76,17 @@ consistent as well.
     aVnodes = aVnodes.slice(aVnodes.length / 2);
 
     // remap some of A's vnodes to B
-    chash.remapVnode('B', aVnodes, function(err, ring, pnodes) {
+    chash.remapVnode('B', aVnodes, function(ring, pnodes) {
         console.log('new ring topology', ring);
         console.log('changed pnode->vnode mappings', pnodes);
     });
 
 ## Adding More Pnodes to the Ring
 You can add additional pnodes to the ring after fash has been initialized by
-invoking remapVnode(). Which will emit an 'update' event when done, 'error'
-event if there's an error, and also optionally returns a callback.
+invoking remapVnode(). which optionally returns a callback. Note, adding the
+callback will cause fash to create a new copy of the ring topology across each
+invocation -- do not do this if you have millions of vnodes, as this is quite
+slow.
 
     var fash = require('fash');
     var Logger = require('bunyan');
@@ -105,16 +105,11 @@ event if there's an error, and also optionally returns a callback.
     // specify the set of virtual nodes to assign to the new physical node.
     var vnodes = [0, 1, 2, 3, 4];
 
-    /* wait for an update event, returns the current topology of the ring, as
-     * well as a map of the removed pnode->vnode[] mappings.
-     */
-    chash.once('update', function(ring, removedMapping) {
-        console.log('ring topology updated', ring);
-        console.log('removed mappings', removedMapping);
-    });
-
     // add the physical node 'F' to the ring.
-    chash.remapVnode('F', vnodes);
+    chash.remapVnode('F', vnodes, function(ring, changedNodes) {
+        console.log('ring topology updated', ring);
+        console.log('removed mappings', changedNodes);
+    });
 
 Fash will remove the vnodes from their previously mapped physical nodes, and
 map them to the new pnode.
@@ -141,9 +136,9 @@ vnodes to another pnode, and then removing the pnode.
     // get the vnodes that map to B
     var vnodes = chash.getVnodes('B');
     // rebalance them to A
-    chash.remapVnode('A', vnodes, function(err, ring, removedMap) {
+    chash.remapVnode('A', vnodes, function(ring, removedMap) {
         // remove B
-        chash.removePnode('B', function(err, ring, pnode) {
+        chash.removePnode('B', function(ring, pnode) {
             if (!err) {
                 console.log('removed pnode %s', pnode);
             }
@@ -188,11 +183,11 @@ looks like
         vnode // the total number of vnodes in the ring.
     }
 
-Additionally, anytime remapVnode() is invoked, fash emits an `update` event
-which contains an updated version of this object that is **not** JSON
-serialized. Fash can be instantiated given a topology object instead of a list
-of nodes. This also allows you to specify a custom pnode to vnode topology --
-as mentioned in the earlier bootstrapping section.
+Additionally, anytime remapVnode() is invoked, it can return a cb which
+contains an updated version of this object that is **not** JSON serialized.
+Fash can be instantiated given a topology object instead of a list of nodes.
+This also allows you to specify a custom pnode to vnode topology -- as
+mentioned in the earlier bootstrapping section.
 
     var fash = require('fash');
     var Logger = require('bunyan');

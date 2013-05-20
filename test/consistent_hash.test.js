@@ -3,6 +3,7 @@ var crypto = require('crypto');
 var fash = require('../lib');
 var Logger = require('bunyan');
 var util = require('util');
+var uuid = require('node-uuid');
 
 var LOG = new Logger({
     name: 'consistent-hash-test',
@@ -52,9 +53,9 @@ _testAllAlgorithms(function remapOnePnodeToAnother(algo, t) {
     // get vnodes from B for later
     var originalBVnodes = chash.getVnodes(PNODES[1]).slice(0);
     // remap all to B
-    chash.remapVnode(PNODES[1], aVnodes, function(err, ring, pnodes) {
-        t.ifError(err);
-
+    chash.remapVnode(PNODES[1], aVnodes, function(ring, pnodes) {
+        t.ok(ring, 'new ring topology should exist');
+        t.ok(pnodes, 'changed pnodes should exist');
         var pnode = chash.pnodeToVnodeMap_[PNODES[0]];
         t.ok(pnode, 'A pnode should still exist even if it has no vnodes');
         pnodeKeys = Object.keys(pnode);
@@ -97,9 +98,9 @@ _testAllAlgorithms(function remapSomeVnodeToAnother(algo, t) {
     var originalBVnodes = chash.getVnodes(PNODES[1]).slice(0);
 
     // remap some of A's vnodes to B
-    chash.remapVnode(PNODES[1], aVnodes, function(err, ring, pnodes) {
-        t.ifError(err);
-
+    chash.remapVnode(PNODES[1], aVnodes, function(ring, pnodes) {
+        t.ok(ring, 'new ring topology should exist');
+        t.ok(pnodes, 'changed pnodes should exist');
         var aVnodesAfter = chash.pnodeToVnodeMap_[PNODES[0]];
         t.ok((Object.keys(aVnodesAfter).length >= 1),
             'A should contain at least one vnode after partial remap');
@@ -146,11 +147,12 @@ _testAllAlgorithms(function removePnode (algo, t) {
 
     // remap all of A to B
     chash.remapVnode(PNODES[1], chash.getVnodes(PNODES[0]),
-                     function(err, ring, pnodes) {
-        t.ifError(err);
-
-        chash.removePnode(PNODES[0], function(err, ring) {
-            t.ifError(err);
+                     function(ring, pnodes) {
+        t.ok(ring, 'new ring topology should exist');
+        t.ok(pnodes, 'changed pnodes should exist');
+        chash.removePnode(PNODES[0], function(ring, pnodes) {
+            t.ok(ring, 'new ring topology should exist');
+            t.ok(pnodes, 'changed pnodes should exist');
             t.ok(chash.pnodes_.indexOf(PNODES[0]) === -1,
                  'A should not exist in pnode array');
             t.ok(!chash.pnodeToVnodeMap_[PNODES[0]],
@@ -180,9 +182,9 @@ _testAllAlgorithms(function add_new_pnode(algo, t) {
     var aVnodes = chash.getVnodes(PNODES[0]);
 
     // remap all to F
-    chash.remapVnode('F', aVnodes, function(err, ring, pnodes) {
-        t.ifError(err);
-
+    chash.remapVnode('F', aVnodes, function(ring, pnodes) {
+        t.ok(ring, 'new ring topology should exist');
+        t.ok(pnodes, 'changed pnodes should exist');
         var pnode = chash.pnodeToVnodeMap_[PNODES[0]];
         t.ok(pnode,
             'pnode A should still exist even if it doesn\'t have vnodes');
@@ -216,9 +218,9 @@ _testAllAlgorithms(function add_new_pnode_remap_only_subset_of_old_pnode(algo, t
     aVnodes = leftOverAVnodes.splice(leftOverAVnodes.length / 2);
 
     // remap some of A's vnodes to F
-    chash.remapVnode('F', aVnodes, function(err, ring, pnodes) {
-        t.ifError(err);
-
+    chash.remapVnode('F', aVnodes, function(ring, pnodes) {
+        t.ok(ring, 'new ring topology should exist');
+        t.ok(pnodes, 'changed pnodes should exist');
         var aVnodesAfter = chash.pnodeToVnodeMap_[PNODES[0]];
         t.ok((Object.keys(aVnodesAfter).length >= 1),
             'A should contain at least one vnode after partial remap');
@@ -315,8 +317,9 @@ _testAllAlgorithms(function add_data_remap_vnode_to_different_pnode(algo, t) {
     chash.addData(vnode, 'foo');
 
     // remap all to B
-    chash.remapVnode(pnode, [vnode], function(err, ring, pnodes) {
-        t.ifError(err);
+    chash.remapVnode(pnode, [vnode], function(ring, pnodes) {
+        t.ok(ring, 'new ring topology should exist');
+        t.ok(pnodes, 'changed pnodes should exist');
         t.equal(chash.vnodeToPnodeMap_[vnode].data, 'foo',
             'stored data should match put data');
         t.equal(chash.pnodeToVnodeMap_[pnode][vnode], 'foo',
@@ -537,6 +540,40 @@ _testAllAlgorithms(function remap_the_same_vnode_more_than_once(algo, t) {
     }
 
     t.ok(caught, 'remapping the same vnode more than once should throw');
+    t.done();
+});
+
+_testAllAlgorithms(function remove_non_existent_pnode_should_throw(algo, t) {
+    var caught;
+    var chash = fash.create({
+        log: LOG,
+        algorithm: algo,
+        pnodes: PNODES,
+        vnodes: NUMBER_OF_VNODES,
+    });
+    try {
+        chash.removePnode(uuid.v4());
+    } catch(e) {
+        caught = true;
+    }
+    t.ok(caught, 'removing non-existent pnode should throw');
+    t.done();
+});
+
+_testAllAlgorithms(function remove_pnode_which_has_vnode_should_throw(algo, t) {
+    var caught;
+    var chash = fash.create({
+        log: LOG,
+        algorithm: algo,
+        pnodes: PNODES,
+        vnodes: NUMBER_OF_VNODES,
+    });
+    try {
+        chash.removePnode(PNODES[0]);
+    } catch(e) {
+        caught = true;
+    }
+    t.ok(caught, 'removing pnode that still has vnodes should throw');
     t.done();
 });
 
