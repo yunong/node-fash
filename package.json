@@ -15,7 +15,7 @@
     "dynamo",
     "hash ring"
   ],
-  "version": "1.2.0",
+  "version": "1.2.1",
   "repository": {
     "type": "git",
     "url": "https://github.com/yunong/node-fash.git"
@@ -38,6 +38,9 @@
   "devDependencies": {
     "nodeunit": "0.8.0",
     "bunyan": "*"
+  },
+  "bin": {
+    "fash": "bin/fash.js"
   },
   "scripts": {
     "test": "./node_modules/.bin/nodeunit test/*.test.js"
