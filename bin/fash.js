@@ -82,8 +82,6 @@ Fash.prototype.do_create.help = (
 );
 
 Fash.prototype.do_add_data = function(subcmd, opts, args, callback) {
-    var self = this;
-
     if (opts.help) {
         this.do_help('help', {}, [subcmd], callback);
         return (callback());
@@ -103,6 +101,8 @@ Fash.prototype.do_add_data = function(subcmd, opts, args, callback) {
             console.log(chash.serialize());
         }
     });
+
+    return (undefined);
 };
 Fash.prototype.do_add_data.options = [{
     names: [ 'f', 'topology' ],
@@ -127,8 +127,6 @@ Fash.prototype.do_add_data.help = (
 );
 
 Fash.prototype.do_remap_vnode = function(subcmd, opts, args, callback) {
-    var self = this;
-
     if (opts.help) {
         this.do_help('help', {}, [subcmd], callback);
         return (callback());
@@ -148,6 +146,8 @@ Fash.prototype.do_remap_vnode = function(subcmd, opts, args, callback) {
 
     chash.remapVnode(opts.p, vnodes);
     console.log(chash.serialize());
+
+    return (undefined);
 };
 Fash.prototype.do_remap_vnode.options = [{
     names: [ 'f', 'topology' ],
@@ -172,8 +172,6 @@ Fash.prototype.do_remap_vnode.help = (
 );
 
 Fash.prototype.do_remove_pnode = function(subcmd, opts, args, callback) {
-    var self = this;
-
     if (opts.help) {
         this.do_help('help', {}, [subcmd], callback);
         return (callback());
@@ -189,6 +187,8 @@ Fash.prototype.do_remove_pnode = function(subcmd, opts, args, callback) {
 
     chash.removePnode(opts.p);
     console.log(chash.serialize());
+
+    return (undefined);
 };
 Fash.prototype.do_remove_pnode.options = [{
     names: [ 'f', 'topology' ],
@@ -209,8 +209,6 @@ Fash.prototype.do_remove_pnode.help = (
 );
 
 Fash.prototype.do_get_node = function(subcmd, opts, args, callback) {
-    var self = this;
-
     if (opts.help) {
         this.do_help('help', {}, [subcmd], callback);
         return (callback());
@@ -224,6 +222,8 @@ Fash.prototype.do_get_node = function(subcmd, opts, args, callback) {
     var topology = fs.readFileSync(opts.f, 'utf8');
     var chash = fash.deserialize({topology: topology});
     console.log(chash.getNode(args[0]));
+
+    return (undefined);
 };
 Fash.prototype.do_get_node.options = [{
     names: [ 'f', 'topology' ],
