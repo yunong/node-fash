@@ -171,4 +171,41 @@ Fash.prototype.do_remap_vnode.help = (
     + '{{options}}'
 );
 
+Fash.prototype.do_remove_pnode = function(subcmd, opts, args, callback) {
+    var self = this;
+
+    if (opts.help) {
+        this.do_help('help', {}, [subcmd], callback);
+        return (callback());
+    }
+
+    if (args.length !== 0 || !opts.f || !opts.p) {
+        this.do_help('help', {}, [subcmd], callback);
+        return (callback());
+    }
+
+    var topology = fs.readFileSync(opts.f, 'utf8');
+    var chash = fash.deserialize({topology: topology});
+
+    chash.removePnode(opts.p);
+    console.log(chash.serialize());
+}
+Fash.prototype.do_remove_pnode.options = [{
+    names: [ 'f', 'topology' ],
+    type: 'string',
+    help: 'the topology to modify'
+}, {
+    names: [ 'p', 'pnode' ],
+    type: 'string',
+    help: 'the pnode to remap the vnode(s) to'
+}];
+Fash.prototype.do_remove_pnode.help = (
+    'remove a pnode'
+    + '\n'
+    + 'usage:\n'
+    + '     fash remove_pnode [options] \n'
+    + '\n'
+    + '{{options}}'
+);
+
 cmdln.main(Fash); // mainline
