@@ -111,7 +111,7 @@ Fash.prototype.do_add_data.options = [{
 }, {
     names: [ 'v', 'vnode' ],
     type: 'string',
-    help: 'the vnode to add the data to'
+    help: 'the vnode(s) to add the data to'
 }, {
     names: [ 'd', 'data' ],
     type: 'string',
@@ -122,6 +122,51 @@ Fash.prototype.do_add_data.help = (
     + '\n'
     + 'usage:\n'
     + '     fash add_data [options] \n'
+    + '\n'
+    + '{{options}}'
+);
+
+Fash.prototype.do_remap_vnode = function(subcmd, opts, args, callback) {
+    var self = this;
+
+    if (opts.help) {
+        this.do_help('help', {}, [subcmd], callback);
+        return (callback());
+    }
+
+    if (args.length !== 0 || !opts.v || !opts.f || !opts.p) {
+        this.do_help('help', {}, [subcmd], callback);
+        return (callback());
+    }
+
+    var topology = fs.readFileSync(opts.f, 'utf8');
+    var chash = fash.deserialize({topology: topology});
+    var vnodes = opts.v.split(' ');
+    for (var i = 0; i < vnodes.length; i++) {
+        vnodes[i] = parseInt(vnodes[i], 10);
+    }
+
+    chash.remapVnode(opts.p, vnodes);
+    console.log(chash.serialize());
+};
+Fash.prototype.do_remap_vnode.options = [{
+    names: [ 'f', 'topology' ],
+    type: 'string',
+    help: 'the topology to modify'
+}, {
+    names: [ 'v', 'vnode' ],
+    type: 'string',
+    help: 'the vnode(s) to remap'
+}, {
+    names: [ 'p', 'pnode' ],
+    type: 'string',
+    help: 'the pnode to remap the vnode(s) to'
+}];
+Fash.prototype.do_remap_vnode.help = (
+    'remap a vnode to a different pnode.\n'
+    + '\n'
+    + 'usage:\n'
+    + '     fash remap_vnode [options] \n'
     + '\n'
     + '{{options}}'
 );
