@@ -189,7 +189,7 @@ Fash.prototype.do_remove_pnode = function(subcmd, opts, args, callback) {
 
     chash.removePnode(opts.p);
     console.log(chash.serialize());
-}
+};
 Fash.prototype.do_remove_pnode.options = [{
     names: [ 'f', 'topology' ],
     type: 'string',
@@ -204,6 +204,37 @@ Fash.prototype.do_remove_pnode.help = (
     + '\n'
     + 'usage:\n'
     + '     fash remove_pnode [options] \n'
+    + '\n'
+    + '{{options}}'
+);
+
+Fash.prototype.do_get_node = function(subcmd, opts, args, callback) {
+    var self = this;
+
+    if (opts.help) {
+        this.do_help('help', {}, [subcmd], callback);
+        return (callback());
+    }
+
+    if (args.length !== 1 || !opts.f) {
+        this.do_help('help', {}, [subcmd], callback);
+        return (callback());
+    }
+
+    var topology = fs.readFileSync(opts.f, 'utf8');
+    var chash = fash.deserialize({topology: topology});
+    console.log(chash.getNode(args[0]));
+};
+Fash.prototype.do_get_node.options = [{
+    names: [ 'f', 'topology' ],
+    type: 'string',
+    help: 'the hash ring topology'
+}];
+Fash.prototype.do_get_node.help = (
+    'hash a value to its spot on the ring'
+    + '\n'
+    + 'usage:\n'
+    + '     fash get_node [options] value\n'
     + '\n'
     + '{{options}}'
 );
