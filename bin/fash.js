@@ -9,6 +9,7 @@
 var bunyan = require('bunyan');
 var cmdln = require('cmdln');
 var fash = require('../lib/index');
+var fs = require('fs');
 var util = require('util');
 
 var Cmdln = cmdln.Cmdln;
@@ -76,6 +77,51 @@ Fash.prototype.do_create.help = (
     + '\n'
     + 'usage:\n'
     + '     fash create [options] \n'
+    + '\n'
+    + '{{options}}'
+);
+
+Fash.prototype.do_add_data = function(subcmd, opts, args, callback) {
+    var self = this;
+
+    if (opts.help) {
+        this.do_help('help', {}, [subcmd], callback);
+        return (callback());
+    }
+
+    if (args.length !== 0 || !opts.v || !opts.f) {
+        this.do_help('help', {}, [subcmd], callback);
+        return (callback());
+    }
+
+    var topology = fs.readFileSync(opts.f, 'utf8');
+    var chash = fash.deserialize({topology: topology});
+    var vnodes = opts.v.split(' ');
+    vnodes.forEach(function(vnode, index) {
+        chash.addData(parseInt(vnode, 10), opts.d);
+        if (index === vnodes.length - 1) {
+            console.log(chash.serialize());
+        }
+    });
+};
+Fash.prototype.do_add_data.options = [{
+    names: [ 'f', 'topology' ],
+    type: 'string',
+    help: 'the topology to modify'
+}, {
+    names: [ 'v', 'vnode' ],
+    type: 'string',
+    help: 'the vnode to add the data to'
+}, {
+    names: [ 'd', 'data' ],
+    type: 'string',
+    help: 'the data to add, optional, if empty, removes data from the node'
+}];
+Fash.prototype.do_add_data.help = (
+    'add data to a vnode.\n'
+    + '\n'
+    + 'usage:\n'
+    + '     fash add_data [options] \n'
     + '\n'
     + '{{options}}'
 );
