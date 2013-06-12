@@ -577,6 +577,25 @@ _testAllAlgorithms(function remove_pnode_which_has_vnode_should_throw(algo, t) {
     t.done();
 });
 
+_testAllAlgorithms(function node_fash_8_null_out_vnode(algo, t) {
+    var chash = fash.create({
+        log: LOG,
+        algorithm: algo,
+        pnodes: PNODES,
+        vnodes: NUMBER_OF_VNODES,
+    });
+
+    var vnode = Math.round(Math.random() * NUMBER_OF_VNODES);
+    var pnode = chash.vnodeToPnodeMap_[vnode].pnode;
+    chash.addData(vnode, undefined, function(topology) {
+        var vnodeStr = vnode.toString();
+        t.ok(topology);
+        t.ok(Object.keys(topology.pnodeToVnodeMap[pnode]).indexOf(vnode.toString()) !== -1,
+             'vnode ' + vnode + ' does not exist in topology');
+        t.done();
+    });
+});
+
 /// Private heleprs
 function _verifyRing(chash, t, algo, cb) {
     // assert that each node appears once and only once
