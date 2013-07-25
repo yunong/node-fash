@@ -1,5 +1,7 @@
 # fash: consistent hashing library for node.js
 
+[![NPM](https://nodei.co/npm/fash.png)](https://nodei.co/npm/fash/)
+
 This module provides a consistent hashing library. Notably, this module the
 ability to **deterministically generate the same hash ring topology across a
 set of distributed hosts**. Fash also handles collisions of nodes on the ring
