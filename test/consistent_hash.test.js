@@ -1,5 +1,6 @@
 var bignum = require('bignum');
 var crypto = require('crypto');
+var common = require('../lib/common');
 var fash = require('../lib');
 var Logger = require('bunyan');
 var util = require('util');
@@ -31,6 +32,7 @@ _testAllAlgorithms(function newRing(algo, t) {
         algorithm: algo,
         pnodes: PNODES,
         vnodes: NUMBER_OF_VNODES,
+        backend: fash.BACKEND.IN_MEMORY
     });
 
     _verifyRing(chash, t, algo, function() {
@@ -44,6 +46,7 @@ _testAllAlgorithms(function remapOnePnodeToAnother(algo, t) {
         algorithm: algo,
         pnodes: PNODES,
         vnodes: NUMBER_OF_VNODES,
+        backend: fash.BACKEND.IN_MEMORY
     });
 
     var beforeRing = JSON.parse(chash.serialize()).pnodeToVnodeMap;
@@ -87,6 +90,7 @@ _testAllAlgorithms(function remapSomeVnodeToAnother(algo, t) {
         algorithm: algo,
         pnodes: PNODES,
         vnodes: NUMBER_OF_VNODES,
+        backend: fash.BACKEND.IN_MEMORY
     });
 
     // get vnodes from A
@@ -143,6 +147,7 @@ _testAllAlgorithms(function removePnode (algo, t) {
         algorithm: algo,
         pnodes: PNODES,
         vnodes: NUMBER_OF_VNODES,
+        backend: fash.BACKEND.IN_MEMORY
     });
 
     // remap all of A to B
@@ -175,6 +180,7 @@ _testAllAlgorithms(function add_new_pnode(algo, t) {
         algorithm: algo,
         pnodes: PNODES,
         vnodes: NUMBER_OF_VNODES,
+        backend: fash.BACKEND.IN_MEMORY
     });
 
     var beforeRing = JSON.parse(chash.serialize()).pnodeToVnodeMap;
@@ -210,6 +216,7 @@ _testAllAlgorithms(function add_new_pnode_remap_only_subset_of_old_pnode(algo, t
         algorithm: algo,
         pnodes: PNODES,
         vnodes: NUMBER_OF_VNODES,
+        backend: fash.BACKEND.IN_MEMORY
     });
 
     // get vnodes from A
@@ -254,13 +261,15 @@ _testAllAlgorithms(function deserialize_hash_ring(algo, t) {
         algorithm: algo,
         pnodes: PNODES,
         vnodes: NUMBER_OF_VNODES,
+        backend: fash.BACKEND.IN_MEMORY
     });
+    console.log(chash);
 
     var chash1 = chash.serialize();
-
     var chash2 = fash.deserialize({
         log: LOG,
-        topology: chash1
+        topology: chash1,
+        backend: fash.BACKEND.IN_MEMORY
     });
 
     _verifyRing(chash2, t, algo, function() {
@@ -284,6 +293,7 @@ _testAllAlgorithms(function add_data(algo, t) {
         algorithm: algo,
         pnodes: PNODES,
         vnodes: NUMBER_OF_VNODES,
+        backend: fash.BACKEND.IN_MEMORY
     });
 
     var vnode = parseInt(NUMBER_OF_VNODES * Math.random(), 10);
@@ -304,6 +314,7 @@ _testAllAlgorithms(function add_data_remap_vnode_to_different_pnode(algo, t) {
         algorithm: algo,
         pnodes: PNODES,
         vnodes: NUMBER_OF_VNODES,
+        backend: fash.BACKEND.IN_MEMORY
     });
 
     var vnode = parseInt(NUMBER_OF_VNODES * Math.random(), 10);
@@ -336,6 +347,7 @@ _testAllAlgorithms(function add_data_serialize_deserialize(algo, t) {
         algorithm: algo,
         pnodes: PNODES,
         vnodes: NUMBER_OF_VNODES,
+        backend: fash.BACKEND.IN_MEMORY
     });
 
     var vnode = parseInt(NUMBER_OF_VNODES * Math.random(), 10);
@@ -347,7 +359,8 @@ _testAllAlgorithms(function add_data_serialize_deserialize(algo, t) {
 
     var chash2 = fash.deserialize({
         log: LOG,
-        topology: chash1
+        topology: chash1,
+        backend: fash.BACKEND.IN_MEMORY
     });
     t.equal(chash2.vnodeToPnodeMap_[vnode].data, 'foo',
         'stored data should match put data in serialized hash');
@@ -374,6 +387,7 @@ _testAllAlgorithms(function add_data_overwrite(algo, t) {
         algorithm: algo,
         pnodes: PNODES,
         vnodes: NUMBER_OF_VNODES,
+        backend: fash.BACKEND.IN_MEMORY
     });
 
     var vnode = parseInt(NUMBER_OF_VNODES * Math.random(), 10);
@@ -395,6 +409,7 @@ _testAllAlgorithms(function add_data_overwrite_with_null(algo, t) {
         algorithm: algo,
         pnodes: PNODES,
         vnodes: NUMBER_OF_VNODES,
+        backend: fash.BACKEND.IN_MEMORY
     });
 
     var vnode = parseInt(NUMBER_OF_VNODES * Math.random(), 10);
@@ -416,6 +431,7 @@ _testAllAlgorithms(function hashing_the_same_key(algo, t) {
         algorithm: algo,
         pnodes: PNODES,
         vnodes: NUMBER_OF_VNODES,
+        backend: fash.BACKEND.IN_MEMORY
     });
     for (var i = 0; i < 10; i++) {
         var random = Math.random().toString(33);
@@ -439,6 +455,7 @@ _testAllAlgorithms(function deserialize_newer_version(algo, t) {
         algorithm: algo,
         pnodes: PNODES,
         vnodes: NUMBER_OF_VNODES,
+        backend: fash.BACKEND.IN_MEMORY
     });
 
     var chash1 = chash.serialize();
@@ -450,7 +467,8 @@ _testAllAlgorithms(function deserialize_newer_version(algo, t) {
     try {
         var chash2 = fash.deserialize({
             log: LOG,
-            topology: chash1
+            topology: chash1,
+            backend: fash.BACKEND.IN_MEMORY
         });
     } catch (e) {
         caught = true;
@@ -467,7 +485,8 @@ _testAllAlgorithms(function collision(algo, t) {
             log: LOG,
             algorithm: algo,
             pnodes: ['a', 'a'],
-            vnodes: NUMBER_OF_VNODES
+            vnodes: NUMBER_OF_VNODES,
+            backend: fash.BACKEND.IN_MEMORY
         });
     } catch (e) {
         caught = true;
@@ -483,6 +502,7 @@ _testAllAlgorithms(function remap_non_existent_vnodes(algo, t) {
         algorithm: algo,
         pnodes: PNODES,
         vnodes: NUMBER_OF_VNODES,
+        backend: fash.BACKEND.IN_MEMORY
     });
 
     try {
@@ -502,6 +522,7 @@ _testAllAlgorithms(function remap_vnode_to_the_same_pnode(algo, t) {
         algorithm: algo,
         pnodes: PNODES,
         vnodes: NUMBER_OF_VNODES,
+        backend: fash.BACKEND.IN_MEMORY
     });
     var vnode = parseInt(NUMBER_OF_VNODES * Math.random(), 10);
     var originalPnode = chash.vnodeToPnodeMap_[vnode].pnode;
@@ -529,6 +550,7 @@ _testAllAlgorithms(function remap_the_same_vnode_more_than_once(algo, t) {
         algorithm: algo,
         pnodes: PNODES,
         vnodes: NUMBER_OF_VNODES,
+        backend: fash.BACKEND.IN_MEMORY
     });
     var vnode = parseInt(NUMBER_OF_VNODES * Math.random(), 10);
     var originalPnode = chash.vnodeToPnodeMap_[vnode].pnode;
@@ -550,6 +572,7 @@ _testAllAlgorithms(function remove_non_existent_pnode_should_throw(algo, t) {
         algorithm: algo,
         pnodes: PNODES,
         vnodes: NUMBER_OF_VNODES,
+        backend: fash.BACKEND.IN_MEMORY
     });
     try {
         chash.removePnode(uuid.v4());
@@ -567,6 +590,7 @@ _testAllAlgorithms(function remove_pnode_which_has_vnode_should_throw(algo, t) {
         algorithm: algo,
         pnodes: PNODES,
         vnodes: NUMBER_OF_VNODES,
+        backend: fash.BACKEND.IN_MEMORY
     });
     try {
         chash.removePnode(PNODES[0]);
@@ -583,6 +607,7 @@ _testAllAlgorithms(function node_fash_8_null_out_vnode(algo, t) {
         algorithm: algo,
         pnodes: PNODES,
         vnodes: NUMBER_OF_VNODES,
+        backend: fash.BACKEND.IN_MEMORY
     });
 
     var vnode = Math.round(Math.random() * NUMBER_OF_VNODES);
@@ -596,7 +621,7 @@ _testAllAlgorithms(function node_fash_8_null_out_vnode(algo, t) {
     });
 });
 
-/// Private heleprs
+// Private heleprs
 function _verifyRing(chash, t, algo, cb) {
     // assert that each node appears once and only once
     var map = {};
@@ -625,10 +650,18 @@ function _verifyRing(chash, t, algo, cb) {
         // if we are at the last vnode, then skip checking for nextNode since
         // there isn't one
         if (index < (NUMBER_OF_VNODES - 1)) {
-            nextNode = bignum(chash.findHashspace(index + 1), 16);
+            nextNode = bignum(common.findHashspace({
+                vnode: index + 1,
+                log: chash.log,
+                vnodeHashInterval: chash.vnodeHashInterval_
+            }), 16);
         }
 
-        var currNode = chash.findHashspace(index);
+        var currNode = common.findHashspace({
+            vnode: index,
+            log: chash.log,
+            vnodeHashInterval: chash.vnodeHashInterval_
+        });
         // assert hash is in between index + 1 and index
         t.ok(hash.ge(currNode), 'hash ' + bignum(hash, 10).toString(16) +
             ' should be >= than \n' + currNode.toString(16));
