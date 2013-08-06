@@ -141,7 +141,7 @@ _testAllAlgorithms(function remapSomeVnodeToAnother(algo, t) {
     });
 });
 
-_testAllAlgorithms(function removePnode (algo, t) {
+_testAllAlgorithms(function removePnode(algo, t) {
     var chash = fash.create({
         log: LOG,
         algorithm: algo,
