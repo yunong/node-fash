@@ -384,7 +384,7 @@ _testAllAlgorithms(function addData(algo, t) {
         },
         function pickVnode(_, cb) {
             _.key = uuid.v4();
-            _.vnode = _.hLevel.getNode(_.key, function(err, node) {
+            _.hLevel.getNode(_.key, function(err, node) {
                 _.node = node;
                 return cb(err);
             });
@@ -405,7 +405,162 @@ _testAllAlgorithms(function addData(algo, t) {
         },
         function verify(_, cb) {
             _verifyRing(_.hLevel, _.hInMem, t, algo, cb);
+        },
+    ], arg: {}}, function(err) {
+        if (err) {
+            t.fail(err);
         }
+        t.done();
+    });
+});
+
+_testAllAlgorithms(function addDataRemapVnodeToDifferentPnode(algo, t) {
+    vasync.pipeline({funcs: [
+        function newRing(_, cb) {
+            _newRing(algo, function(err, hLevel, hInMem) {
+                _.hLevel = hLevel;
+                _.hInMem = hInMem;
+                return cb(err);
+            });
+        },
+        function pickVnode(_, cb) {
+            _.key = uuid.v4();
+            _.hLevel.getNode(_.key, function(err, node) {
+                _.node = node;
+                return cb(err);
+            });
+        },
+        function pickNewPnode(_, cb) {
+            for (var i = 0; i < PNODES.length; i++) {
+                pnode = PNODES[i];
+                if (pnode !== _.node.pnode) {
+                    _.newPnode = pnode;
+                    cb();
+                    break;
+                }
+            }
+        },
+        function addData(_, cb) {
+            _.hLevel.addData(_.node.vnode, 'foo', cb);
+            _.hInMem.addData(_.node.vnode, 'foo');
+        },
+        function getData(_, cb) {
+            _.hLevel.getNode(_.key, function(err, node) {
+                if (err) {
+                    return cb(err);
+                }
+                t.strictEqual(node.data, 'foo',
+                              'stored data should match put data');
+                return cb();
+            });
+        },
+        function verify(_, cb) {
+            _verifyRing(_.hLevel, _.hInMem, t, algo, cb);
+        },
+        function remap(_, cb) {
+            _.hInMem.remapVnode(_.newPnode, _.node.vnode);
+            _.hLevel.remapVnode(_.newPnode, _.node.vnode, cb);
+        },
+        function assertVnodes(_, cb) {
+            _.hLevel.getVnodes(_.newPnode, function(err, vnodes) {
+                if (err) {
+                    return cb(err);
+                }
+                var inMemVnodes = _.hInMem.getVnodes(_.newPnode);
+                t.strictEqual(JSON.stringify(vnodes.sort()),
+                              JSON.stringify(inMemVnodes.sort()),
+                              'level vnodes should equal in mem vnodes');
+                return cb();
+            });
+        },
+        function verify2(_, cb) {
+            _verifyRing(_.hLevel, _.hInMem, t, algo, cb);
+        },
+        function getData2(_, cb) {
+            _.hLevel.getNode(_.key, function(err, node) {
+                if (err) {
+                    return cb(err);
+                }
+                t.strictEqual(node.data, 'foo',
+                              'stored data should match put data');
+                t.strictEqual(node.vnode, _.node.vnode,
+                              'vnode should be the same');
+                return cb();
+            });
+        },
+    ], arg: {}}, function(err) {
+        if (err) {
+            t.fail(err);
+        }
+        t.done();
+    });
+});
+
+_testAllAlgorithms(function addDataRemapVnodeToNewPnode(algo, t) {
+    var newPnode = 'yunong';
+    vasync.pipeline({funcs: [
+        function newRing(_, cb) {
+            _newRing(algo, function(err, hLevel, hInMem) {
+                _.hLevel = hLevel;
+                _.hInMem = hInMem;
+                return cb(err);
+            });
+        },
+        function pickVnode(_, cb) {
+            _.key = uuid.v4();
+            _.hLevel.getNode(_.key, function(err, node) {
+                _.node = node;
+                return cb(err);
+            });
+        },
+        function addData(_, cb) {
+            _.hLevel.addData(_.node.vnode, 'foo', cb);
+            _.hInMem.addData(_.node.vnode, 'foo');
+        },
+        function getData(_, cb) {
+            _.hLevel.getNode(_.key, function(err, node) {
+                if (err) {
+                    return cb(err);
+                }
+                t.strictEqual(node.data, 'foo',
+                              'stored data should match put data');
+                return cb();
+            });
+        },
+        function verify(_, cb) {
+            _verifyRing(_.hLevel, _.hInMem, t, algo, cb);
+        },
+        function remap(_, cb) {
+            _.hInMem.remapVnode(newPnode, _.node.vnode);
+            _.hLevel.remapVnode(newPnode, _.node.vnode, cb);
+        },
+        function assertVnodes(_, cb) {
+            _.hLevel.getVnodes(newPnode, function(err, vnodes) {
+                if (err) {
+                    return cb(err);
+                }
+                var inMemVnodes = _.hInMem.getVnodes(newPnode);
+                t.strictEqual(JSON.stringify(vnodes.sort()),
+                              JSON.stringify(inMemVnodes.sort()),
+                              'level vnodes should equal in mem vnodes');
+                return cb();
+            });
+        },
+        function verify2(_, cb) {
+            _verifyRing(_.hLevel, _.hInMem, t, algo, cb);
+        },
+        function getData2(_, cb) {
+            _.hLevel.getNode(_.key, function(err, node) {
+                if (err) {
+                    return cb(err);
+                }
+                t.strictEqual(node.data, 'foo',
+                              'stored data should match put data');
+                t.strictEqual(node.vnode, _.node.vnode,
+                              'vnode should be the same');
+                return cb();
+            });
+        },
     ], arg: {}}, function(err) {
         if (err) {
             t.fail(err);
