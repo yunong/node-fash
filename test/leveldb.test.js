@@ -72,19 +72,17 @@ _testAllAlgorithms(function remapOnePnodeToAnother(algo, t) {
                 _.hLevel.remapVnode(PNODES[1], _.vnodes[count++], remapCb);
             };
         },
-        function debugPrintVnodes(_, cb) {
-            if (LOG.level() <= 30) {
-                _.hLevel.getVnodes(PNODES[1], function(err, vnodes) {
-                    LOG.debug({
-                        levelVnodes: vnodes,
-                        inmemVnodes: _.hInMem.getVnodes(PNODES[1]),
-                        inmemOldVnodes: _.hInMem.getVnodes(PNODES[0])
-                    });
+        function assertVnodes(_, cb) {
+            _.hLevel.getVnodes(newPnode, function(err, vnodes) {
+                if (err) {
                     return cb(err);
-                });
-            } else {
+                }
+                var inMemVnodes = _.hInMem.getVnodes(newPnode);
+                t.strictEqual(JSON.stringify(vnodes.sort()),
+                              JSON.stringify(inMemVnodes.sort()),
+                              'level vnodes should equal in mem vnodes');
                 return cb();
-            }
+            });
         },
         function verify(_, cb) {
             _verifyRing(_.hLevel, _.hInMem, t, algo, cb);
@@ -567,6 +565,36 @@ _testAllAlgorithms(function addDataRemapVnodeToNewPnode(algo, t) {
         }
         t.done();
     });
+});
+
+_testAllAlgorithms(function serialize(algo, t) {
+    vasync.pipeline({funcs: [
+        function newRing(_, cb) {
+            _newRing(algo, function(err, hLevel, hInMem) {
+                _.hLevel = hLevel;
+                _.hInMem = hInMem;
+                return cb(err);
+            });
+        },
+        function serialize(_, cb) {
+            _.hLevel.serialize(function(err, topology) {
+                if (err) {
+                    return cb(err);
+                }
+                _.topology = topology;
+                return cb();
+            });
+        },
+        function verify(_, cb) {
+            _verifyRing(_.hLevel, _.hInMem, t, algo, cb);
+        }
+    ], arg: {}}, function(err) {
+        if (err) {
+            t.fail(err);
+        }
+        t.done();
+    });
+
 });
 
 // private helpers
