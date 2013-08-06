@@ -224,8 +224,196 @@ _testAllAlgorithms(function removePnode(algo, t) {
         }
         t.done();
     });
-
 });
+
+_testAllAlgorithms(function addNewPnode(algo, t) {
+    var newPnode = 'yunong';
+    vasync.pipeline({funcs: [
+        function newRing(_, cb) {
+            _newRing(algo, function(err, hLevel, hInMem) {
+                _.hLevel = hLevel;
+                _.hInMem = hInMem;
+                return cb(err);
+            });
+        },
+        function getVnodes(_, cb) {
+            _.hLevel.getVnodes(PNODES[0], function(err, vnodes) {
+                _.vnodes = vnodes;
+                return cb(err);
+            });
+        },
+        function remap(_, cb) {
+            _.hInMem.remapVnode(newPnode, _.vnodes);
+            var count = 0;
+            // remap to the second pnode
+            _.hLevel.remapVnode(newPnode, _.vnodes[count++], remapCb);
+
+            // ensure serial invocations of remap
+            function remapCb(err) {
+                if (err) {
+                    return cb(err);
+                }
+                if (count === _.vnodes.length) {
+                    return cb();
+                }
+                _.hLevel.remapVnode(newPnode, _.vnodes[count++], remapCb);
+            };
+        },
+        function assertVnodes(_, cb) {
+            _.hLevel.getVnodes(newPnode, function(err, vnodes) {
+                if (err) {
+                    return cb(err);
+                }
+                var inMemVnodes = _.hInMem.getVnodes(newPnode);
+                t.strictEqual(JSON.stringify(vnodes.sort()),
+                              JSON.stringify(inMemVnodes.sort()),
+                              'level vnodes should equal in mem vnodes');
+                return cb();
+            });
+        },
+        function verify(_, cb) {
+            _verifyRing(_.hLevel, _.hInMem, t, algo, cb);
+        },
+        function removePnode(_, cb) {
+            _.hLevel.removePnode(PNODES[0], function(err) {
+                if (err) {
+                    return cb(err);
+                }
+                _.hInMem.removePnode(PNODES[0]);
+                return cb();
+            });
+        },
+        function verify2(_, cb) {
+            _verifyRing(_.hLevel, _.hInMem, t, algo, cb);
+        },
+        // removing the pnode again should throw
+        function removePnodeAgain(_, cb) {
+            _.hLevel.removePnode(PNODES[0], function(err) {
+                if (!err) {
+                    return cb(new Error('removing pnode again should throw'));
+                } else {
+                    return cb();
+                }
+            });
+        }
+    ], arg: {}}, function(err) {
+        if (err) {
+            t.fail(err);
+        }
+        t.done();
+    });
+});
+
+_testAllAlgorithms(function addNewPnodeRemapOnlySubsetOfOldPnode(algo, t) {
+    var newPnode = 'yunong';
+    vasync.pipeline({funcs: [
+        function newRing(_, cb) {
+            _newRing(algo, function(err, hLevel, hInMem) {
+                _.hLevel = hLevel;
+                _.hInMem = hInMem;
+                return cb(err);
+            });
+        },
+        function getVnodes(_, cb) {
+            _.hLevel.getVnodes(PNODES[0], function(err, vnodes) {
+                _.vnodes = vnodes.splice(vnodes.length / 2);
+                return cb(err);
+            });
+        },
+        function remap(_, cb) {
+            _.hInMem.remapVnode(newPnode, _.vnodes);
+            var count = 0;
+            // remap to the second pnode
+            _.hLevel.remapVnode(newPnode, _.vnodes[count++], remapCb);
+
+            // ensure serial invocations of remap
+            function remapCb(err) {
+                if (err) {
+                    return cb(err);
+                }
+                if (count === _.vnodes.length) {
+                    return cb();
+                }
+                _.hLevel.remapVnode(newPnode, _.vnodes[count++], remapCb);
+            };
+        },
+        function assertVnodes(_, cb) {
+            _.hLevel.getVnodes(newPnode, function(err, vnodes) {
+                if (err) {
+                    return cb(err);
+                }
+                var inMemVnodes = _.hInMem.getVnodes(newPnode);
+                t.strictEqual(JSON.stringify(vnodes.sort()),
+                              JSON.stringify(inMemVnodes.sort()),
+                              'level vnodes should equal in mem vnodes');
+                return cb();
+            });
+        },
+        function verify(_, cb) {
+            _verifyRing(_.hLevel, _.hInMem, t, algo, cb);
+        },
+        // removing the oldpnode should throw
+        function removePnode(_, cb) {
+            _.hLevel.removePnode(PNODES[0], function(err) {
+                if (!err) {
+                    return cb(new Error('removing old pnode should throw'));
+                } else {
+                    return cb();
+                }
+            });
+        },
+        function verify2(_, cb) {
+            _verifyRing(_.hLevel, _.hInMem, t, algo, cb);
+        },
+    ], arg: {}}, function(err) {
+        if (err) {
+            t.fail(err);
+        }
+        t.done();
+    });
+});
+
+_testAllAlgorithms(function addData(algo, t) {
+    vasync.pipeline({funcs: [
+        function newRing(_, cb) {
+            _newRing(algo, function(err, hLevel, hInMem) {
+                _.hLevel = hLevel;
+                _.hInMem = hInMem;
+                return cb(err);
+            });
+        },
+        function pickVnode(_, cb) {
+            _.key = uuid.v4();
+            _.vnode = _.hLevel.getNode(_.key, function(err, node) {
+                _.node = node;
+                return cb(err);
+            });
+        },
+        function addData(_, cb) {
+            _.hLevel.addData(_.node.vnode, 'foo', cb);
+            _.hInMem.addData(_.node.vnode, 'foo');
+        },
+        function getData(_, cb) {
+            _.hLevel.getNode(_.key, function(err, node) {
+                if (err) {
+                    return cb(err);
+                }
+                t.strictEqual(node.data, 'foo',
+                              'stored data should match put data');
+                return cb();
+            });
+        },
+        function verify(_, cb) {
+            _verifyRing(_.hLevel, _.hInMem, t, algo, cb);
+        }
+    ], arg: {}}, function(err) {
+        if (err) {
+            t.fail(err);
+        }
+        t.done();
+    });
+});
+
 // private helpers
 function _verifyRing(h1, h2, t, algo, cb) {
     // XXX check validity of keys in leveldb.
@@ -237,17 +425,30 @@ function _verifyRing(h1, h2, t, algo, cb) {
         var key = random.substring(Math.floor(Math.random() * random.length));
         h1.getNode(key, (function(k, err, node1) {
             var node2 = h2.getNode(k);
-            LOG.debug({err: err, key: k, node1: node1, node2: node2, count: count}, 'returned from getNode');
+            LOG.debug({
+                err: err,
+                key: k,
+                node1: node1,
+                node2: node2,
+                count: count
+            }, 'returned from getNode');
+
             if (err) {
                 t.fail(err);
                 return cb();
             }
-            t.strictEqual(node1.pnode, node2.pnode, 'hashed node ' + util.inspect(node1) +
-                          ' does not match test in-mem hash' + util.inspect(node2));
-            t.strictEqual(node1.vnode, node2.vnode, 'hashed node ' + util.inspect(node1) +
-                          ' does not match test in-mem hash' + util.inspect(node2));
-            t.strictEqual(node1.data, node2.data, 'hashed node ' + util.inspect(node1) +
-                          ' does not match test in-mem hash' + util.inspect(node2));
+            t.strictEqual(node1.pnode, node2.pnode, 'hashed node ' +
+                          util.inspect(node1) +
+                          ' does not match test in-mem hash' +
+                          util.inspect(node2));
+            t.strictEqual(node1.vnode, node2.vnode, 'hashed node ' +
+                          util.inspect(node1) +
+                          ' does not match test in-mem hash' +
+                          util.inspect(node2));
+            t.strictEqual(node1.data, node2.data, 'hashed node ' +
+                          util.inspect(node1) +
+                          ' does not match test in-mem hash' +
+                          util.inspect(node2));
             if (++count === (NUMBER_OF_KEYS - 1)) {
                 return cb();
             }
