@@ -73,11 +73,11 @@ _testAllAlgorithms(function remapOnePnodeToAnother(algo, t) {
             };
         },
         function assertVnodes(_, cb) {
-            _.hLevel.getVnodes(newPnode, function(err, vnodes) {
+            _.hLevel.getVnodes(PNODES[1], function(err, vnodes) {
                 if (err) {
                     return cb(err);
                 }
-                var inMemVnodes = _.hInMem.getVnodes(newPnode);
+                var inMemVnodes = _.hInMem.getVnodes(PNODES[1]);
                 t.strictEqual(JSON.stringify(vnodes.sort()),
                               JSON.stringify(inMemVnodes.sort()),
                               'level vnodes should equal in mem vnodes');
@@ -585,8 +585,11 @@ _testAllAlgorithms(function serialize(algo, t) {
                 return cb();
             });
         },
-        function verify(_, cb) {
-            _verifyRing(_.hLevel, _.hInMem, t, algo, cb);
+        function compareWithInMem(_, cb) {
+            var inMemTopology = _.hInMem.serialize();
+            t.strictEqual(_.topology, inMemTopology, 'topology should match ' +
+                          'in mem test version');
+            return cb();
         }
     ], arg: {}}, function(err) {
         if (err) {
