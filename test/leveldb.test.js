@@ -33,7 +33,6 @@ _testAllAlgorithms(function newRing(algo, t) {
             t.fail(err);
             t.done();
         }
-
         _verifyRing(hLevel, hInMem, t, algo, function() {
             t.done();
         });
@@ -587,6 +586,8 @@ _testAllAlgorithms(function serialize(algo, t) {
         },
         function compareWithInMem(_, cb) {
             var inMemTopology = _.hInMem.serialize();
+             //sometimes this might fail since JSON.stringify doesn't guarantee
+             //order, meh.
             t.strictEqual(_.topology, inMemTopology, 'topology should match ' +
                           'in mem test version');
             return cb();
@@ -597,7 +598,70 @@ _testAllAlgorithms(function serialize(algo, t) {
         }
         t.done();
     });
+});
 
+_testAllAlgorithms(function deserialize(algo, t) {
+    vasync.pipeline({funcs: [
+        function newRing(_, cb) {
+            _newRing(algo, function(err, hLevel, hInMem) {
+                _.hLevel = hLevel;
+                _.hInMem = hInMem;
+                return cb(err);
+            });
+        },
+        function serialize(_, cb) {
+            _.hLevel.serialize(function(err, topology) {
+                if (err) {
+                    return cb(err);
+                }
+                _.topology = topology;
+                return cb();
+            });
+        },
+        function deserialize(_, cb) {
+            _newRingFromTopology(_.topology, function(err, hLevel, hInMem) {
+                _.hLevel = hLevel;
+                _.hInMem = hInMem;
+                return cb(err);
+            });
+        },
+        function verify(_, cb) {
+            _verifyRing(_.hLevel, _.hInMem, t, algo, cb);
+        },
+
+    ], arg: {}}, function(err) {
+        if (err) {
+            t.fail(err);
+        }
+        t.done();
+    });
+});
+
+_testAllAlgorithms(function loadFromDb(algo, t) {
+    vasync.pipeline({funcs: [
+        function newRing(_, cb) {
+            _newRing(algo, function(err, hLevel, hInMem) {
+                _.hLevel = hLevel;
+                _.hInMem = hInMem;
+                return cb(err);
+            });
+        },
+        function newRingFromDb(_, cb) {
+            _newRingFromDb(_.hLevel.options_.location, function(err, h) {
+                _.hLevel = h;
+                return cb(err);
+            });
+        },
+        function verify(_, cb) {
+            _verifyRing(_.hLevel, _.hInMem, t, algo, cb);
+        },
+
+    ], arg: {}}, function(err) {
+        if (err) {
+            t.fail(err);
+        }
+        t.done();
+    });
 });
 
 // private helpers
@@ -663,6 +727,42 @@ function _newRing(algo, cb) {
             algorithm: algo,
             pnodes: PNODES,
             vnodes: NUMBER_OF_VNODES,
+            backend: fash.BACKEND.IN_MEMORY
+        });
+        return cb(null, h1, h2);
+    });
+}
+
+function _newRingFromDb(location, cb) {
+    var h1 = fash.load({
+        log: LOG,
+        backend: fash.BACKEND.LEVEL_DB,
+        location: location
+    }, function(err) {
+        if (err) {
+            return cb(err);
+        }
+        return cb(null, h1);
+    });
+}
+
+function _newRingFromTopology(topology, cb) {
+    var h1 = fash.deserialize({
+        log: LOG,
+        topology: topology,
+        backend: fash.BACKEND.LEVEL_DB,
+        location: '/tmp/' + uuid.v4()
+    }, function(err) {
+        if (err) {
+            return cb(err);
+        }
+        var h2 = fash.deserialize({
+            log: new Logger({
+                name: 'test-hash',
+                src: true,
+                level: 'fatal'
+            }),
+            topology: topology,
             backend: fash.BACKEND.IN_MEMORY
         });
         return cb(null, h1, h2);
