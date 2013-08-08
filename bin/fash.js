@@ -72,15 +72,18 @@ Fash.prototype.do_create = function(subcmd, opts, args, callback) {
             return callback(false);
         }
 
-        chash.serialize(function(err, sh) {
-            if (err) {
-                console.error(err);
+        chash.serialize(function(_err, sh) {
+            if (_err) {
+                console.error(_err);
                 return callback(false);
             }
             console.log(sh);
             return (callback());
         });
+        return (undefined);
     });
+
+    return (undefined);
 };
 Fash.prototype.do_create.options = [{
     names: [ 'v', 'vnode' ],
