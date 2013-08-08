@@ -48,16 +48,37 @@ Fash.prototype.do_create = function(subcmd, opts, args, callback) {
     }
 
     var pnodes = opts.p.split(' ');
-    var chash = fash.create({
+    switch(opts.b) {
+        case 'memory':
+            opts.b = fash.BACKEND.IN_MEMORY;
+        break;
+        case 'leveldb':
+            opts.b = fash.BACKEND.LEVEL_DB;
+        break;
+        default:
+            opts.b = fash.BACKEND.IN_MEMORY;
+        break;
+    }
+    fash.create({
         log: self.log,
         algorithm: opts.a || 'sha256',
         pnodes: pnodes,
-        vnodes: opts.v
+        vnodes: opts.v,
+        backend: opts.b,
+        location: opts.l
+    }, function(err, chash) {
+        if (err) {
+            console.error(err);
+        }
+
+        chash.serialize(function(err, sh) {
+            if (err) {
+                console.error(err);
+            }
+            console.log(sh);
+            return (callback());
+        });
     });
-
-    console.log(chash.serialize());
-
-    return (callback());
 };
 Fash.prototype.do_create.options = [{
     names: [ 'v', 'vnode' ],
@@ -71,6 +92,15 @@ Fash.prototype.do_create.options = [{
     names: [ 'a', 'algorithm' ],
     type: 'string',
     help: 'the algorithm to use'
+}, {
+    names: [ 'b', 'backend' ],
+    type: 'string',
+    help: 'the backend to use'
+}, {
+    names: [ 'l', 'location' ],
+    type: 'string',
+    help: 'the (optional) location to store the topology --' +
+          ' only applies to non-inmemory backends'
 }];
 Fash.prototype.do_create.help = (
     'create a consistent hash ring.\n'
