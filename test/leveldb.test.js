@@ -4,6 +4,7 @@ var common = require('../lib/common');
 var exec = require('child_process').exec;
 var fash = require('../lib');
 var Logger = require('bunyan');
+var lodash = require('lodash');
 var util = require('util');
 var uuid = require('node-uuid');
 var vasync = require('vasync');
@@ -37,8 +38,8 @@ exports.beforeTest = function(t) {
     t.done();
 };
 
-_testAllAlgorithms(function newRing(algo, t) {
-    _newRing(algo, function(err, hLevel, hInMem) {
+_testAllConstructors(function newRing(algo, constructor, t) {
+    constructor(algo, function(err, hLevel, hInMem) {
         if (err) {
             t.fail(err);
             t.done();
@@ -49,10 +50,10 @@ _testAllAlgorithms(function newRing(algo, t) {
     });
 });
 
-_testAllAlgorithms(function remapOnePnodeToAnother(algo, t) {
+_testAllConstructors(function remapOnePnodeToAnother(algo, constructor, t) {
     vasync.pipeline({funcs: [
         function newRing(_, cb) {
-            _newRing(algo, function(err, hLevel, hInMem) {
+            constructor(algo, function(err, hLevel, hInMem) {
                 _.hLevel = hLevel;
                 _.hInMem = hInMem;
                 return cb(err);
@@ -87,8 +88,7 @@ _testAllAlgorithms(function remapOnePnodeToAnother(algo, t) {
                     return cb(err);
                 }
                 var inMemVnodes = _.hInMem.getVnodes(PNODES[1]);
-                t.strictEqual(JSON.stringify(vnodes.sort()),
-                              JSON.stringify(inMemVnodes.sort()),
+                t.ok(lodash.isEqual(vnodes.sort(), inMemVnodes.sort()),
                               'level vnodes should equal in mem vnodes');
                 return cb();
             });
@@ -104,10 +104,10 @@ _testAllAlgorithms(function remapOnePnodeToAnother(algo, t) {
     });
 });
 
-_testAllAlgorithms(function remapSomeVnodeToAnother(algo, t) {
+_testAllConstructors(function remapSomeVnodeToAnother(algo, constructor, t) {
     vasync.pipeline({funcs: [
         function newRing(_, cb) {
-            _newRing(algo, function(err, hLevel, hInMem) {
+            constructor(algo, function(err, hLevel, hInMem) {
                 _.hLevel = hLevel;
                 _.hInMem = hInMem;
                 return cb(err);
@@ -142,8 +142,7 @@ _testAllAlgorithms(function remapSomeVnodeToAnother(algo, t) {
                     return cb(err);
                 }
                 var inMemVnodes = _.hInMem.getVnodes(PNODES[1]);
-                t.strictEqual(JSON.stringify(vnodes.sort()),
-                              JSON.stringify(inMemVnodes.sort()),
+                t.ok(lodash.isEqual(vnodes.sort(), inMemVnodes.sort()),
                               'level vnodes should equal in mem vnodes');
                 return cb();
             });
@@ -159,10 +158,10 @@ _testAllAlgorithms(function remapSomeVnodeToAnother(algo, t) {
     });
 });
 
-_testAllAlgorithms(function removePnode(algo, t) {
+_testAllConstructors(function removePnode(algo, constructor, t) {
     vasync.pipeline({funcs: [
         function newRing(_, cb) {
-            _newRing(algo, function(err, hLevel, hInMem) {
+            constructor(algo, function(err, hLevel, hInMem) {
                 _.hLevel = hLevel;
                 _.hInMem = hInMem;
                 return cb(err);
@@ -197,8 +196,7 @@ _testAllAlgorithms(function removePnode(algo, t) {
                     return cb(err);
                 }
                 var inMemVnodes = _.hInMem.getVnodes(PNODES[1]);
-                t.strictEqual(JSON.stringify(vnodes.sort()),
-                              JSON.stringify(inMemVnodes.sort()),
+                t.ok(lodash.isEqual(vnodes.sort(), inMemVnodes.sort()),
                               'level vnodes should equal in mem vnodes');
                 return cb();
             });
@@ -233,11 +231,11 @@ _testAllAlgorithms(function removePnode(algo, t) {
     });
 });
 
-_testAllAlgorithms(function addNewPnode(algo, t) {
+_testAllConstructors(function addNewPnode(algo, constructor, t) {
     var newPnode = 'yunong';
     vasync.pipeline({funcs: [
         function newRing(_, cb) {
-            _newRing(algo, function(err, hLevel, hInMem) {
+            constructor(algo, function(err, hLevel, hInMem) {
                 _.hLevel = hLevel;
                 _.hInMem = hInMem;
                 return cb(err);
@@ -267,13 +265,12 @@ _testAllAlgorithms(function addNewPnode(algo, t) {
             };
         },
         function assertVnodes(_, cb) {
-            _.hLevel.getVnodes(newPnode, function(err, vnodes) {
+            _.hLevel.getVnodes(PNODES[1], function(err, vnodes) {
                 if (err) {
                     return cb(err);
                 }
-                var inMemVnodes = _.hInMem.getVnodes(newPnode);
-                t.strictEqual(JSON.stringify(vnodes.sort()),
-                              JSON.stringify(inMemVnodes.sort()),
+                var inMemVnodes = _.hInMem.getVnodes(PNODES[1]);
+                t.ok(lodash.isEqual(vnodes.sort(), inMemVnodes.sort()),
                               'level vnodes should equal in mem vnodes');
                 return cb();
             });
@@ -311,11 +308,14 @@ _testAllAlgorithms(function addNewPnode(algo, t) {
     });
 });
 
-_testAllAlgorithms(function addNewPnodeRemapOnlySubsetOfOldPnode(algo, t) {
+_testAllConstructors(function addNewPnodeRemapOnlySubsetOfOldPnode(algo,
+                                                                   constructor,
+                                                                   t)
+{
     var newPnode = 'yunong';
     vasync.pipeline({funcs: [
         function newRing(_, cb) {
-            _newRing(algo, function(err, hLevel, hInMem) {
+            constructor(algo, function(err, hLevel, hInMem) {
                 _.hLevel = hLevel;
                 _.hInMem = hInMem;
                 return cb(err);
@@ -345,13 +345,12 @@ _testAllAlgorithms(function addNewPnodeRemapOnlySubsetOfOldPnode(algo, t) {
             };
         },
         function assertVnodes(_, cb) {
-            _.hLevel.getVnodes(newPnode, function(err, vnodes) {
+            _.hLevel.getVnodes(PNODES[1], function(err, vnodes) {
                 if (err) {
                     return cb(err);
                 }
-                var inMemVnodes = _.hInMem.getVnodes(newPnode);
-                t.strictEqual(JSON.stringify(vnodes.sort()),
-                              JSON.stringify(inMemVnodes.sort()),
+                var inMemVnodes = _.hInMem.getVnodes(PNODES[1]);
+                t.ok(lodash.isEqual(vnodes.sort(), inMemVnodes.sort()),
                               'level vnodes should equal in mem vnodes');
                 return cb();
             });
@@ -380,10 +379,10 @@ _testAllAlgorithms(function addNewPnodeRemapOnlySubsetOfOldPnode(algo, t) {
     });
 });
 
-_testAllAlgorithms(function addData(algo, t) {
+_testAllConstructors(function addData(algo, constructor, t) {
     vasync.pipeline({funcs: [
         function newRing(_, cb) {
-            _newRing(algo, function(err, hLevel, hInMem) {
+            constructor(algo, function(err, hLevel, hInMem) {
                 _.hLevel = hLevel;
                 _.hInMem = hInMem;
                 return cb(err);
@@ -421,10 +420,13 @@ _testAllAlgorithms(function addData(algo, t) {
     });
 });
 
-_testAllAlgorithms(function addDataRemapVnodeToDifferentPnode(algo, t) {
+_testAllConstructors(function addDataRemapVnodeToDifferentPnode(algo,
+                                                                constructor,
+                                                                t)
+{
     vasync.pipeline({funcs: [
         function newRing(_, cb) {
-            _newRing(algo, function(err, hLevel, hInMem) {
+            constructor(algo, function(err, hLevel, hInMem) {
                 _.hLevel = hLevel;
                 _.hInMem = hInMem;
                 return cb(err);
@@ -469,13 +471,12 @@ _testAllAlgorithms(function addDataRemapVnodeToDifferentPnode(algo, t) {
             _.hLevel.remapVnode(_.newPnode, _.node.vnode, cb);
         },
         function assertVnodes(_, cb) {
-            _.hLevel.getVnodes(_.newPnode, function(err, vnodes) {
+            _.hLevel.getVnodes(PNODES[1], function(err, vnodes) {
                 if (err) {
                     return cb(err);
                 }
-                var inMemVnodes = _.hInMem.getVnodes(_.newPnode);
-                t.strictEqual(JSON.stringify(vnodes.sort()),
-                              JSON.stringify(inMemVnodes.sort()),
+                var inMemVnodes = _.hInMem.getVnodes(PNODES[1]);
+                t.ok(lodash.isEqual(vnodes.sort(), inMemVnodes.sort()),
                               'level vnodes should equal in mem vnodes');
                 return cb();
             });
@@ -503,11 +504,13 @@ _testAllAlgorithms(function addDataRemapVnodeToDifferentPnode(algo, t) {
     });
 });
 
-_testAllAlgorithms(function addDataRemapVnodeToNewPnode(algo, t) {
+_testAllConstructors(function addDataRemapVnodeToNewPnode(algo, constructor,
+                                                          t)
+{
     var newPnode = 'yunong';
     vasync.pipeline({funcs: [
         function newRing(_, cb) {
-            _newRing(algo, function(err, hLevel, hInMem) {
+            constructor(algo, function(err, hLevel, hInMem) {
                 _.hLevel = hLevel;
                 _.hInMem = hInMem;
                 return cb(err);
@@ -542,13 +545,12 @@ _testAllAlgorithms(function addDataRemapVnodeToNewPnode(algo, t) {
             _.hLevel.remapVnode(newPnode, _.node.vnode, cb);
         },
         function assertVnodes(_, cb) {
-            _.hLevel.getVnodes(newPnode, function(err, vnodes) {
+            _.hLevel.getVnodes(PNODES[1], function(err, vnodes) {
                 if (err) {
                     return cb(err);
                 }
-                var inMemVnodes = _.hInMem.getVnodes(newPnode);
-                t.strictEqual(JSON.stringify(vnodes.sort()),
-                              JSON.stringify(inMemVnodes.sort()),
+                var inMemVnodes = _.hInMem.getVnodes(PNODES[1]);
+                t.ok(lodash.isEqual(vnodes.sort(), inMemVnodes.sort()),
                               'level vnodes should equal in mem vnodes');
                 return cb();
             });
@@ -576,10 +578,10 @@ _testAllAlgorithms(function addDataRemapVnodeToNewPnode(algo, t) {
     });
 });
 
-_testAllAlgorithms(function serialize(algo, t) {
+_testAllConstructors(function serialize(algo, constructor, t) {
     vasync.pipeline({funcs: [
         function newRing(_, cb) {
-            _newRing(algo, function(err, hLevel, hInMem) {
+            constructor(algo, function(err, hLevel, hInMem) {
                 _.hLevel = hLevel;
                 _.hInMem = hInMem;
                 return cb(err);
@@ -596,68 +598,10 @@ _testAllAlgorithms(function serialize(algo, t) {
         },
         function compareWithInMem(_, cb) {
             var inMemTopology = _.hInMem.serialize();
-             //sometimes this might fail since JSON.stringify doesn't guarantee
-             //order, meh.
-            t.strictEqual(_.topology, inMemTopology, 'topology should match ' +
-                          'in mem test version');
+            t.ok(lodash.isEqual(JSON.parse(_.topology),
+                                JSON.parse(inMemTopology)),
+                    'topology should match in mem test version');
             return cb();
-        }
-    ], arg: {}}, function(err) {
-        if (err) {
-            t.fail(err);
-        }
-        t.done();
-    });
-});
-
-_testAllAlgorithms(function deserialize(algo, t) {
-    vasync.pipeline({funcs: [
-        function newRing(_, cb) {
-            _newRing(algo, function(err, hLevel, hInMem) {
-                _.hLevel = hLevel;
-                _.hInMem = hInMem;
-                return cb(err);
-            });
-        },
-        function serialize(_, cb) {
-            _.hLevel.serialize(function(err, topology) {
-                if (err) {
-                    return cb(err);
-                }
-                _.topology = topology;
-                return cb();
-            });
-        },
-        function deserialize(_, cb) {
-            _newRingFromTopology(_.topology, function(err, hLevel, hInMem) {
-                _.hLevel = hLevel;
-                _.hInMem = hInMem;
-                return cb(err);
-            });
-        },
-        function verify(_, cb) {
-            _verifyRing(_.hLevel, _.hInMem, t, algo, cb);
-        },
-
-    ], arg: {}}, function(err) {
-        if (err) {
-            t.fail(err);
-        }
-        t.done();
-    });
-});
-
-_testAllAlgorithms(function loadFromDb(algo, t) {
-    vasync.pipeline({funcs: [
-        function newRingFromDb(_, cb) {
-            _newRingFromDb(algo, function(err, h1, h2) {
-                _.hLevel = h1;
-                _.hInMem = h2;
-                return cb(err);
-            });
-        },
-        function verify(_, cb) {
-            _verifyRing(_.hLevel, _.hInMem, t, algo, cb);
         }
     ], arg: {}}, function(err) {
         if (err) {
@@ -782,31 +726,52 @@ function _newRingFromDb(algo, callback) {
     });
 }
 
-function _newRingFromTopology(topology, cb) {
-    var h1 = fash.deserialize({
-        log: LOG,
-        topology: topology,
-        backend: fash.BACKEND.LEVEL_DB,
-        location: '/tmp/' + uuid.v4()
-    }, function(err) {
-        if (err) {
-            return cb(err);
+function _newRingFromTopology(algo, cb) {
+    var h1, h2;
+    vasync.pipeline({funcs: [
+        function newRing(_, cb) {
+            _newRing(algo, function(err, hLevel, hInMem) {
+                _.hLevel = hLevel;
+                h2 = hInMem;
+                return cb(err);
+            });
+        },
+        function serialize(_, cb) {
+            _.hLevel.serialize(function(err, topology) {
+                if (err) {
+                    return cb(err);
+                }
+                _.topology = topology;
+                return cb();
+            });
+        },
+        function deserialize(_, cb) {
+            h1 = fash.deserialize({
+                log: LOG,
+                topology: _.topology,
+                backend: fash.BACKEND.LEVEL_DB,
+                location: '/tmp/' + uuid.v4()
+            }, function(err) {
+                return cb(err);
+            });
         }
-        var h2 = fash.deserialize({
-            log: new Logger({
-                name: 'test-hash',
-                src: true,
-                level: 'fatal'
-            }),
-            topology: topology,
-            backend: fash.BACKEND.IN_MEMORY
-        });
-        return cb(null, h1, h2);
+    ], arg: {}}, function(err) {
+        return cb(err, h1, h2);
     });
 }
 
 function _testAllAlgorithms(test) {
     ALGORITHM.forEach(function(algo) {
         exports[test.name + algo] = test.bind(null, algo);
+    });
+}
+
+function _testAllConstructors(test) {
+    ALGORITHM.forEach(function(algo) {
+        exports[test.name + algo + 'new'] = test.bind(null, algo, _newRing);
+        exports[test.name + algo + 'fromDb'] =
+            test.bind(null, algo, _newRingFromDb);
+        exports[test.name + algo + 'fromTopology'] =
+            test.bind(null, algo, _newRingFromTopology);
     });
 }

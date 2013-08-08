@@ -263,7 +263,6 @@ _testAllAlgorithms(function deserialize_hash_ring(algo, t) {
         vnodes: NUMBER_OF_VNODES,
         backend: fash.BACKEND.IN_MEMORY
     });
-    console.log(chash);
 
     var chash1 = chash.serialize();
     var chash2 = fash.deserialize({
@@ -653,14 +652,14 @@ function _verifyRing(chash, t, algo, cb) {
             nextNode = bignum(common.findHashspace({
                 vnode: index + 1,
                 log: chash.log,
-                vnodeHashInterval: chash.vnodeHashInterval_
+                vnodeHashInterval: chash.VNODE_HASH_INTERVAL
             }), 16);
         }
 
         var currNode = common.findHashspace({
             vnode: index,
             log: chash.log,
-            vnodeHashInterval: chash.vnodeHashInterval_
+            vnodeHashInterval: chash.VNODE_HASH_INTERVAL
         });
         // assert hash is in between index + 1 and index
         t.ok(hash.ge(currNode), 'hash ' + bignum(hash, 10).toString(16) +
