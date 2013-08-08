@@ -17,6 +17,7 @@ var NUMBER_OF_VNODES = parseInt(process.env.NUMBER_OF_VNODES || 100);
 var NUMBER_OF_PNODES = parseInt(process.env.NUMBER_OF_PNODES || 10);
 var PNODES = new Array(NUMBER_OF_PNODES);
 var ALGORITHM = ['sha256', 'sha1', 'md5'];
+var LEVELDB_LOCATION = process.env.LEVELDB_LOCATION || './test/data/leveldb-';
 
 exports.beforeTest = function(t) {
     for (var i = 0; i < NUMBER_OF_PNODES; i++) {
@@ -639,23 +640,16 @@ _testAllAlgorithms(function deserialize(algo, t) {
 
 _testAllAlgorithms(function loadFromDb(algo, t) {
     vasync.pipeline({funcs: [
-        function newRing(_, cb) {
-            _newRing(algo, function(err, hLevel, hInMem) {
-                _.hLevel = hLevel;
-                _.hInMem = hInMem;
-                return cb(err);
-            });
-        },
         function newRingFromDb(_, cb) {
-            _newRingFromDb(_.hLevel.options_.location, function(err, h) {
-                _.hLevel = h;
+            _newRingFromDb(algo, function(err, h1, h2) {
+                _.hLevel = h1;
+                _.hInMem = h2;
                 return cb(err);
             });
         },
         function verify(_, cb) {
             _verifyRing(_.hLevel, _.hInMem, t, algo, cb);
-        },
-
+        }
     ], arg: {}}, function(err) {
         if (err) {
             t.fail(err);
@@ -733,16 +727,28 @@ function _newRing(algo, cb) {
     });
 }
 
-function _newRingFromDb(location, cb) {
+function _newRingFromDb(algo, cb) {
     var h1 = fash.load({
         log: LOG,
         backend: fash.BACKEND.LEVEL_DB,
-        location: location
+        location: LEVELDB_LOCATION + algo,
     }, function(err) {
         if (err) {
             return cb(err);
         }
-        return cb(null, h1);
+        // XXX need a sample leveldb for each algorithm.
+        var h2 = fash.create({
+            log: new Logger({
+                name: 'test-hash',
+                src: true,
+                level: 'fatal'
+            }),
+            algorithm: algo,
+            pnodes: PNODES,
+            vnodes: NUMBER_OF_VNODES,
+            backend: fash.BACKEND.IN_MEMORY
+        });
+        return cb(null, h1, h2);
     });
 }
 
