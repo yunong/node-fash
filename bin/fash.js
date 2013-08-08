@@ -44,7 +44,7 @@ Fash.prototype.do_create = function(subcmd, opts, args, callback) {
 
     if (args.length !== 0 || !opts.v || !opts.p) {
         this.do_help('help', {}, [subcmd], callback);
-        return (callback());
+        return (callback(false));
     }
 
     var pnodes = opts.p.split(' ');
@@ -69,11 +69,13 @@ Fash.prototype.do_create = function(subcmd, opts, args, callback) {
     }, function(err, chash) {
         if (err) {
             console.error(err);
+            return callback(false);
         }
 
         chash.serialize(function(err, sh) {
             if (err) {
                 console.error(err);
+                return callback(false);
             }
             console.log(sh);
             return (callback());

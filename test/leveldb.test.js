@@ -1,28 +1,37 @@
 var bignum = require('bignum');
 var crypto = require('crypto');
 var common = require('../lib/common');
+var exec = require('child_process').exec;
 var fash = require('../lib');
 var Logger = require('bunyan');
 var util = require('util');
 var uuid = require('node-uuid');
 var vasync = require('vasync');
+var verror = require('verror');
 
 var LOG = new Logger({
     name: 'consistent-hash-test',
     src: true,
     level: process.env.LOG_LEVEL || 'warn'
 });
+var FASH_CLI_PATH = process.env.FASH_CLI_PATH || './bin/fash.js';
 var NUMBER_OF_KEYS = parseInt(process.env.NUMBER_OF_KEYS || 1000, 10);
 var NUMBER_OF_VNODES = parseInt(process.env.NUMBER_OF_VNODES || 100);
 var NUMBER_OF_PNODES = parseInt(process.env.NUMBER_OF_PNODES || 10);
 var PNODES = new Array(NUMBER_OF_PNODES);
+var PNODE_STRING = '\'';
 var ALGORITHM = ['sha256', 'sha1', 'md5'];
-var LEVELDB_LOCATION = process.env.LEVELDB_LOCATION || './test/data/leveldb-';
 
 exports.beforeTest = function(t) {
     for (var i = 0; i < NUMBER_OF_PNODES; i++) {
         PNODES[i] = 'pnode' + i;
+        if (i === 0) {
+            PNODE_STRING += PNODES[i];
+        } else {
+            PNODE_STRING += ' ' + PNODES[i];
+        }
     }
+    PNODE_STRING += '\'';
 
     PNODES.sort();
     t.done();
@@ -727,28 +736,49 @@ function _newRing(algo, cb) {
     });
 }
 
-function _newRingFromDb(algo, cb) {
-    var h1 = fash.load({
-        log: LOG,
-        backend: fash.BACKEND.LEVEL_DB,
-        location: LEVELDB_LOCATION + algo,
-    }, function(err) {
-        if (err) {
-            return cb(err);
+function _newRingFromDb(algo, callback) {
+    var h1, h2;
+    var location = '/tmp/' + uuid.v4();
+    vasync.pipeline({funcs: [
+        // create the ring using a cli in another process so that we can use it
+        // in this process.
+        function createRing(_, cb) {
+            var eStr = FASH_CLI_PATH + ' create -v ' + NUMBER_OF_VNODES +
+                ' -l ' + location + ' -p ' + PNODE_STRING + ' -b leveldb ' +
+                '-a ' + algo;
+            exec(eStr, function(err, stdout, stderr) {
+                return cb(err);
+            });
+        },
+        function createRingFromDb(_, cb) {
+            h1 = fash.load({
+                log: LOG,
+                backend: fash.BACKEND.LEVEL_DB,
+                location: location
+            }, function(err) {
+                if (err) {
+                    return cb(err);
+                }
+                h2 = fash.create({
+                    log: new Logger({
+                        name: 'test-hash',
+                        src: true,
+                        level: 'fatal'
+                    }),
+                    algorithm: algo,
+                    pnodes: PNODES,
+                    vnodes: NUMBER_OF_VNODES,
+                    backend: fash.BACKEND.IN_MEMORY
+                });
+
+                return cb();
+            });
         }
-        // XXX need a sample leveldb for each algorithm.
-        var h2 = fash.create({
-            log: new Logger({
-                name: 'test-hash',
-                src: true,
-                level: 'fatal'
-            }),
-            algorithm: algo,
-            pnodes: PNODES,
-            vnodes: NUMBER_OF_VNODES,
-            backend: fash.BACKEND.IN_MEMORY
-        });
-        return cb(null, h1, h2);
+    ], arg:{}}, function(err) {
+        if (err) {
+            err = new verror.VError(err);
+        }
+        return callback(err, h1, h2);
     });
 }
 
