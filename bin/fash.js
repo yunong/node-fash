@@ -11,6 +11,8 @@ var cmdln = require('cmdln');
 var fash = require('../lib/index');
 var fs = require('fs');
 var util = require('util');
+var vasync = require('vasync');
+var verror = require('verror');
 
 var Cmdln = cmdln.Cmdln;
 
@@ -77,7 +79,9 @@ Fash.prototype.do_create = function(subcmd, opts, args, callback) {
                 console.error(_err);
                 return callback(false);
             }
-            console.log(sh);
+            if (opts.o) {
+                console.log(sh);
+            }
             return (callback());
         });
         return (undefined);
@@ -100,12 +104,16 @@ Fash.prototype.do_create.options = [{
 }, {
     names: [ 'b', 'backend' ],
     type: 'string',
-    help: 'the backend to use'
+    help: 'the backend to use one of (memory, leveldb)'
 }, {
     names: [ 'l', 'location' ],
     type: 'string',
     help: 'the (optional) location to store the topology --' +
-          ' only applies to non-inmemory backends'
+          ' only applies to the leveldb backend'
+}, {
+    names: [ 'o', 'output' ],
+    type: 'bool',
+    help: 'serialize and print out the resulting hash to stdout'
 }];
 Fash.prototype.do_create.help = (
     'create a consistent hash ring.\n'
@@ -117,33 +125,99 @@ Fash.prototype.do_create.help = (
 );
 
 Fash.prototype.do_add_data = function(subcmd, opts, args, callback) {
+    var self = this;
     if (opts.help) {
         this.do_help('help', {}, [subcmd], callback);
         return (callback());
     }
 
-    if (args.length !== 0 || !opts.v || !opts.f) {
+    if (args.length !== 0 || !opts.v || !opts.d) {
         this.do_help('help', {}, [subcmd], callback);
         return (callback());
     }
 
-    var topology = fs.readFileSync(opts.f, 'utf8');
-    var chash = fash.deserialize({topology: topology});
-    var vnodes = opts.v.split(' ');
-    vnodes.forEach(function(vnode, index) {
-        chash.addData(parseInt(vnode, 10), opts.d);
-        if (index === vnodes.length - 1) {
-            console.log(chash.serialize());
+    var hashOptions = {
+        log: self.log
+    };
+    var hash;
+    var constructor;
+
+    vasync.pipeline({funcs: [
+        function prepInput(_, cb) {
+            if (!opts.b || opts.b === 'memory') {
+                hashOptions.backend = fash.BACKEND.IN_MEMORY;
+                constructor = fash.deserialize;
+                if (opts.l) {
+                    hashOptions.topology = fs.readFileSync(opts.l, 'utf8');
+                    return cb();
+                } else {
+                    hashOptions.topology = '';
+                    process.stdin.resume();
+                    process.stdin.setEncoding('utf8');
+
+                    process.stdin.on('data', function(chunk) {
+                        hashOptions.topology += chunk;
+                    });
+
+                    process.stdin.on('end', function() {
+                        return cb();
+                    });
+                }
+
+            } else if (opts.b === 'leveldb') {
+                hashOptions.backend = fash.BACKEND.LEVEL_DB;
+                constructor = fash.load;
+                if (!opts.l) {
+                    this.do_help('help', {}, [subcmd], callback);
+                    return (callback());
+                } else {
+                    hashOptions.location = opts.l;
+                    return cb();
+                }
+            } else {
+                throw new Error('internal error, default case invoked');
+            }
+        },
+        function loadRing(_, cb) {
+            hash = constructor(hashOptions, cb);
+        },
+        function addData(_, cb) {
+            var count = 0;
+            var vnodes = opts.v.split(' ');
+            hash.addData(parseInt(vnodes[count], 10), opts.d, addDataCb);
+            function addDataCb(err) {
+                if (err) {
+                    return cb(err);
+                }
+                if (++count === vnodes.length) {
+                    return cb();
+                } else {
+                    hash.addData(parseInt(vnodes[count], 10),
+                                 opts.d, addDataCb);
+                }
+            };
+        },
+        function printRing(_, cb) {
+            hash.serialize(function(_err, sh) {
+                if (_err) {
+                    return cb(new verror.VError(_err,
+                                                'unable to print hash'));
+                }
+                if (opts.o) {
+                    console.log(sh);
+                }
+                return cb();;
+            });
+        }
+    ], arg: {}}, function(err) {
+        if (err) {
+            console.error(err);
+        } else {
+            return (undefined);
         }
     });
-
-    return (undefined);
 };
 Fash.prototype.do_add_data.options = [{
-    names: [ 'f', 'topology' ],
-    type: 'string',
-    help: 'the topology to modify'
-}, {
     names: [ 'v', 'vnode' ],
     type: 'string',
     help: 'the vnode(s) to add the data to'
@@ -151,6 +225,18 @@ Fash.prototype.do_add_data.options = [{
     names: [ 'd', 'data' ],
     type: 'string',
     help: 'the data to add, optional, if empty, removes data from the node'
+}, {
+    names: [ 'b', 'backend' ],
+    type: 'string',
+    help: 'the backend to use'
+}, {
+    names: [ 'l', 'location' ],
+    type: 'string',
+    help: 'the location of the topology only applies to leveldb backends'
+}, {
+    names: [ 'o', 'output' ],
+    type: 'bool',
+    help: 'serialize and print out the resulting hash to stdout'
 }];
 Fash.prototype.do_add_data.help = (
     'add data to a vnode.\n'
@@ -162,40 +248,118 @@ Fash.prototype.do_add_data.help = (
 );
 
 Fash.prototype.do_remap_vnode = function(subcmd, opts, args, callback) {
+    var self = this;
     if (opts.help) {
         this.do_help('help', {}, [subcmd], callback);
         return (callback());
     }
 
-    if (args.length !== 0 || !opts.v || !opts.f || !opts.p) {
+    if (args.length !== 0 || !opts.v || !opts.p) {
         this.do_help('help', {}, [subcmd], callback);
         return (callback());
     }
 
-    var topology = fs.readFileSync(opts.f, 'utf8');
-    var chash = fash.deserialize({topology: topology});
-    var vnodes = opts.v.split(' ');
-    for (var i = 0; i < vnodes.length; i++) {
-        vnodes[i] = parseInt(vnodes[i], 10);
-    }
+    var hashOptions = {
+        log: self.log
+    };
+    var hash;
+    var constructor;
 
-    chash.remapVnode(opts.p, vnodes);
-    console.log(chash.serialize());
+    vasync.pipeline({funcs: [
+        function prepInput(_, cb) {
+            if (!opts.b || opts.b === 'memory') {
+                hashOptions.backend = fash.BACKEND.IN_MEMORY;
+                constructor = fash.deserialize;
+                if (opts.l) {
+                    hashOptions.topology = fs.readFileSync(opts.l, 'utf8');
+                    return cb();
+                } else {
+                    hashOptions.topology = '';
+                    process.stdin.resume();
+                    process.stdin.setEncoding('utf8');
 
-    return (undefined);
+                    process.stdin.on('data', function(chunk) {
+                        hashOptions.topology += chunk;
+                    });
+
+                    process.stdin.on('end', function() {
+                        return cb();
+                    });
+                }
+
+            } else if (opts.b === 'leveldb') {
+                hashOptions.backend = fash.BACKEND.LEVEL_DB;
+                constructor = fash.load;
+                if (!opts.l) {
+                    this.do_help('help', {}, [subcmd], callback);
+                    return (callback());
+                } else {
+                    hashOptions.location = opts.l;
+                    return cb();
+                }
+            } else {
+                throw new Error('internal error, default case invoked');
+            }
+        },
+        function loadRing(_, cb) {
+            hash = constructor(hashOptions, cb);
+        },
+        function remap(_, cb) {
+            var count = 0;
+            var vnodes = opts.v.split(' ');
+            hash.remapVnode(opts.p, parseInt(vnodes[count], 10), remapCb);
+            function remapCb(err) {
+                if (err) {
+                    return cb(err);
+                }
+                if (++count === vnodes.length) {
+                    return cb();
+                } else {
+                    hash.remapVnode(opts.p, parseInt(vnodes[count], 10),
+                                    remapCb);
+                }
+            };
+        },
+        function printRing(_, cb) {
+            hash.serialize(function(_err, sh) {
+                if (_err) {
+                    return cb(new verror.VError(_err,
+                                                'unable to print hash'));
+                }
+                if (opts.o) {
+                    console.log(sh);
+                }
+                return cb();;
+            });
+        }
+    ], arg: {}}, function(err) {
+        if (err) {
+            console.error(err);
+        } else {
+            return (undefined);
+        }
+    });
 };
 Fash.prototype.do_remap_vnode.options = [{
-    names: [ 'f', 'topology' ],
-    type: 'string',
-    help: 'the topology to modify'
-}, {
     names: [ 'v', 'vnode' ],
     type: 'string',
     help: 'the vnode(s) to remap'
 }, {
+    names: [ 'b', 'backend' ],
+    type: 'string',
+    help: 'the backend to use'
+}, {
     names: [ 'p', 'pnode' ],
     type: 'string',
     help: 'the pnode to remap the vnode(s) to'
+}, {
+    names: [ 'l', 'location' ],
+    type: 'string',
+    help: 'the location of the topology only applies to leveldb backends'
+}, {
+    names: [ 'o', 'output' ],
+    type: 'bool',
+    help: 'serialize and print out the resulting hash to stdout'
 }];
 Fash.prototype.do_remap_vnode.help = (
     'remap a vnode to a different pnode.\n'

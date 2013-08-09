@@ -57,8 +57,6 @@ _testAllAlgorithms(function remapOnePnodeToAnother(algo, t) {
     var originalBVnodes = chash.getVnodes(PNODES[1]).slice(0);
     // remap all to B
     chash.remapVnode(PNODES[1], aVnodes, function(ring, pnodes) {
-        t.ok(ring, 'new ring topology should exist');
-        t.ok(pnodes, 'changed pnodes should exist');
         var pnode = chash.pnodeToVnodeMap_[PNODES[0]];
         t.ok(pnode, 'A pnode should still exist even if it has no vnodes');
         pnodeKeys = Object.keys(pnode);
@@ -103,8 +101,6 @@ _testAllAlgorithms(function remapSomeVnodeToAnother(algo, t) {
 
     // remap some of A's vnodes to B
     chash.remapVnode(PNODES[1], aVnodes, function(ring, pnodes) {
-        t.ok(ring, 'new ring topology should exist');
-        t.ok(pnodes, 'changed pnodes should exist');
         var aVnodesAfter = chash.pnodeToVnodeMap_[PNODES[0]];
         t.ok((Object.keys(aVnodesAfter).length >= 1),
             'A should contain at least one vnode after partial remap');
@@ -153,8 +149,6 @@ _testAllAlgorithms(function removePnode(algo, t) {
     // remap all of A to B
     chash.remapVnode(PNODES[1], chash.getVnodes(PNODES[0]),
                      function(ring, pnodes) {
-        t.ok(ring, 'new ring topology should exist');
-        t.ok(pnodes, 'changed pnodes should exist');
         chash.removePnode(PNODES[0], function(ring, pnodes) {
             t.ok(ring, 'new ring topology should exist');
             t.ok(pnodes, 'changed pnodes should exist');
@@ -189,8 +183,6 @@ _testAllAlgorithms(function add_new_pnode(algo, t) {
 
     // remap all to F
     chash.remapVnode('F', aVnodes, function(ring, pnodes) {
-        t.ok(ring, 'new ring topology should exist');
-        t.ok(pnodes, 'changed pnodes should exist');
         var pnode = chash.pnodeToVnodeMap_[PNODES[0]];
         t.ok(pnode,
             'pnode A should still exist even if it doesn\'t have vnodes');
@@ -226,8 +218,6 @@ _testAllAlgorithms(function add_new_pnode_remap_only_subset_of_old_pnode(algo, t
 
     // remap some of A's vnodes to F
     chash.remapVnode('F', aVnodes, function(ring, pnodes) {
-        t.ok(ring, 'new ring topology should exist');
-        t.ok(pnodes, 'changed pnodes should exist');
         var aVnodesAfter = chash.pnodeToVnodeMap_[PNODES[0]];
         t.ok((Object.keys(aVnodesAfter).length >= 1),
             'A should contain at least one vnode after partial remap');
@@ -328,8 +318,6 @@ _testAllAlgorithms(function add_data_remap_vnode_to_different_pnode(algo, t) {
 
     // remap all to B
     chash.remapVnode(pnode, [vnode], function(ring, pnodes) {
-        t.ok(ring, 'new ring topology should exist');
-        t.ok(pnodes, 'changed pnodes should exist');
         t.equal(chash.vnodeToPnodeMap_[vnode].data, 'foo',
             'stored data should match put data');
         t.equal(chash.pnodeToVnodeMap_[pnode][vnode], 'foo',
@@ -611,10 +599,15 @@ _testAllAlgorithms(function node_fash_8_null_out_vnode(algo, t) {
 
     var vnode = Math.round(Math.random() * NUMBER_OF_VNODES);
     var pnode = chash.vnodeToPnodeMap_[vnode].pnode;
-    chash.addData(vnode, undefined, function(topology) {
+    chash.addData(vnode, undefined, function(err) {
+        if (err) {
+            t.fail(err);
+            t.done();
+        }
         var vnodeStr = vnode.toString();
-        t.ok(topology);
-        t.ok(Object.keys(topology.pnodeToVnodeMap[pnode]).indexOf(vnode.toString()) !== -1,
+        topology = JSON.parse(chash.serialize());
+        t.ok(Object.keys(topology.pnodeToVnodeMap[pnode]).
+             indexOf(vnode.toString()) !== -1,
              'vnode ' + vnode + ' does not exist in topology');
         t.done();
     });
