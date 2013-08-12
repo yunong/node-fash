@@ -10,11 +10,16 @@ var bunyan = require('bunyan');
 var cmdln = require('cmdln');
 var fash = require('../lib/index');
 var fs = require('fs');
+var sprintf = require('util').format;
 var util = require('util');
 var vasync = require('vasync');
 var verror = require('verror');
 
 var Cmdln = cmdln.Cmdln;
+var BACKENDS = {
+    LEVEL_DB: 'leveldb',
+    IN_MEMORY: 'memory'
+};
 
 function Fash() {
     Cmdln.call(this, {
@@ -51,10 +56,10 @@ Fash.prototype.do_create = function(subcmd, opts, args, callback) {
 
     var pnodes = opts.p.split(' ');
     switch(opts.b) {
-        case 'memory':
+        case BACKENDS.IN_MEMORY:
             opts.b = fash.BACKEND.IN_MEMORY;
         break;
-        case 'leveldb':
+        case BACKENDS.LEVEL_DB:
             opts.b = fash.BACKEND.LEVEL_DB;
         break;
         default:
@@ -144,7 +149,7 @@ Fash.prototype.do_add_data = function(subcmd, opts, args, callback) {
 
     vasync.pipeline({funcs: [
         function prepInput(_, cb) {
-            if (!opts.b || opts.b === 'memory') {
+            if (!opts.b || opts.b === BACKENDS.IN_MEMORY) {
                 hashOptions.backend = fash.BACKEND.IN_MEMORY;
                 constructor = fash.deserialize;
                 if (opts.l) {
@@ -163,7 +168,7 @@ Fash.prototype.do_add_data = function(subcmd, opts, args, callback) {
                         return cb();
                     });
                 }
-            } else if (opts.b === 'leveldb') {
+            } else if (opts.b === BACKENDS.LEVEL_DB) {
                 hashOptions.backend = fash.BACKEND.LEVEL_DB;
                 constructor = fash.load;
                 if (!opts.l) {
@@ -174,7 +179,9 @@ Fash.prototype.do_add_data = function(subcmd, opts, args, callback) {
                     return cb();
                 }
             } else {
-                throw new Error('internal error, default case invoked');
+                console.error('one of %j must be specified if not passing ' +
+                              'topology via stdin', BACKENDS);
+                return (undefined);
             }
             return (undefined);
         },
@@ -268,7 +275,7 @@ Fash.prototype.do_remap_vnode = function(subcmd, opts, args, callback) {
 
     vasync.pipeline({funcs: [
         function prepInput(_, cb) {
-            if (!opts.b || opts.b === 'memory') {
+            if (!opts.b || opts.b === BACKENDS.IN_MEMORY) {
                 hashOptions.backend = fash.BACKEND.IN_MEMORY;
                 constructor = fash.deserialize;
                 if (opts.l) {
@@ -287,7 +294,7 @@ Fash.prototype.do_remap_vnode = function(subcmd, opts, args, callback) {
                         return cb();
                     });
                 }
-            } else if (opts.b === 'leveldb') {
+            } else if (opts.b === BACKENDS.LEVEL_DB) {
                 hashOptions.backend = fash.BACKEND.LEVEL_DB;
                 constructor = fash.load;
                 if (!opts.l) {
@@ -298,7 +305,9 @@ Fash.prototype.do_remap_vnode = function(subcmd, opts, args, callback) {
                     return cb();
                 }
             } else {
-                throw new Error('internal error, default case invoked');
+                console.error('one of %j must be specified if not passing ' +
+                              'topology via stdin', BACKENDS);
+                return (undefined);
             }
             return (undefined);
         },
@@ -391,7 +400,7 @@ Fash.prototype.do_remove_pnode = function(subcmd, opts, args, callback) {
 
     vasync.pipeline({funcs: [
         function prepInput(_, cb) {
-            if (!opts.b || opts.b === 'memory') {
+            if (!opts.b || opts.b === BACKENDS.IN_MEMORY) {
                 hashOptions.backend = fash.BACKEND.IN_MEMORY;
                 constructor = fash.deserialize;
                 if (opts.l) {
@@ -410,7 +419,7 @@ Fash.prototype.do_remove_pnode = function(subcmd, opts, args, callback) {
                         return cb();
                     });
                 }
-            } else if (opts.b === 'leveldb') {
+            } else if (opts.b === BACKENDS.LEVEL_DB) {
                 hashOptions.backend = fash.BACKEND.LEVEL_DB;
                 constructor = fash.load;
                 if (!opts.l) {
@@ -421,7 +430,9 @@ Fash.prototype.do_remove_pnode = function(subcmd, opts, args, callback) {
                     return cb();
                 }
             } else {
-                throw new Error('internal error, default case invoked');
+                console.error('one of %j must be specified if not passing ' +
+                              'topology via stdin', BACKENDS);
+                return (undefined);
             }
             return (undefined);
         },
@@ -497,7 +508,7 @@ Fash.prototype.do_get_node = function(subcmd, opts, args, callback) {
 
     vasync.pipeline({funcs: [
         function prepInput(_, cb) {
-            if (!opts.b || opts.b === 'memory') {
+            if (!opts.b || opts.b === BACKENDS.IN_MEMORY) {
                 hashOptions.backend = fash.BACKEND.IN_MEMORY;
                 constructor = fash.deserialize;
                 if (opts.l) {
@@ -516,7 +527,7 @@ Fash.prototype.do_get_node = function(subcmd, opts, args, callback) {
                         return cb();
                     });
                 }
-            } else if (opts.b === 'leveldb') {
+            } else if (opts.b === BACKENDS.LEVEL_DB) {
                 hashOptions.backend = fash.BACKEND.LEVEL_DB;
                 constructor = fash.load;
                 if (!opts.l) {
@@ -527,7 +538,9 @@ Fash.prototype.do_get_node = function(subcmd, opts, args, callback) {
                     return cb();
                 }
             } else {
-                throw new Error('internal error, default case invoked');
+                console.error('one of %j must be specified if not passing ' +
+                              'topology via stdin', BACKENDS);
+                return (undefined);
             }
             return (undefined);
         },
@@ -584,7 +597,7 @@ Fash.prototype.do_print_hash = function(subcmd, opts, args, callback) {
 
     vasync.pipeline({funcs: [
         function prepInput(_, cb) {
-            if (!opts.b || opts.b === 'memory') {
+            if (!opts.b || opts.b === BACKENDS.IN_MEMORY) {
                 hashOptions.backend = fash.BACKEND.IN_MEMORY;
                 constructor = fash.deserialize;
                 if (opts.l) {
@@ -603,7 +616,7 @@ Fash.prototype.do_print_hash = function(subcmd, opts, args, callback) {
                         return cb();
                     });
                 }
-            } else if (opts.b === 'leveldb') {
+            } else if (opts.b === BACKENDS.LEVEL_DB) {
                 hashOptions.backend = fash.BACKEND.LEVEL_DB;
                 constructor = fash.load;
                 if (!opts.l) {
@@ -614,7 +627,9 @@ Fash.prototype.do_print_hash = function(subcmd, opts, args, callback) {
                     return cb();
                 }
             } else {
-                throw new Error('internal error, default case invoked');
+                console.error('one of %j must be specified if not passing ' +
+                              'topology via stdin', BACKENDS);
+                return (undefined);
             }
             return (undefined);
         },
