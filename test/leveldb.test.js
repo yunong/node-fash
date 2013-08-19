@@ -3,8 +3,11 @@ var crypto = require('crypto');
 var common = require('../lib/common');
 var exec = require('child_process').exec;
 var fash = require('../lib');
+var leveldb = require('../lib/backend/leveldb');
 var Logger = require('bunyan');
 var lodash = require('lodash');
+var once = require('once');
+var sprintf = require('util').format;
 var util = require('util');
 var uuid = require('node-uuid');
 var vasync = require('vasync');
@@ -611,46 +614,229 @@ _testAllConstructors(function serialize(algo, constructor, t) {
     });
 });
 
+// negative tests
+_testAllAlgorithms(function collision(algo, t) {
+    fash.create({
+        log: LOG,
+        algorithm: algo,
+        pnodes: ['a', 'a'],
+        vnodes: NUMBER_OF_VNODES,
+        backend: fash.BACKEND.LEVEL_DB,
+        location: '/tmp/' + uuid.v4()
+    }, function(err) {
+        t.ok(err, 'identical pnodes should throw');
+        t.done();
+    });
+});
+
+_testAllConstructors(function remapNonExistentVnodes(algo, constructor, t) {
+    vasync.pipeline({funcs: [
+        function newRing(_, cb) {
+            constructor(algo, function(err, hLevel, hInMem) {
+                _.hLevel = hLevel;
+                _.hInMem = hInMem;
+                return cb(err);
+            });
+        },
+        function remap(_, cb) {
+            _.hLevel.remapVnode('yunong', NUMBER_OF_VNODES + 10, function(err) {
+                t.ok(err, 'remapping non-existent vnode should throw');
+                return cb();
+            });
+        }
+    ], arg: {}}, function(err) {
+        if (err) {
+            t.fail(err);
+        }
+        t.done();
+    });
+});
+
+_testAllConstructors(function remapVnodeToTheSamePnode(algo, constructor, t) {
+    vasync.pipeline({funcs: [
+        function newRing(_, cb) {
+            constructor(algo, function(err, hLevel, hInMem) {
+                _.hLevel = hLevel;
+                _.hInMem = hInMem;
+                return cb(err);
+            });
+        },
+        function pickVnode(_, cb) {
+            _.key = uuid.v4();
+            _.hLevel.getNode(_.key, function(err, node) {
+                _.node = node;
+                return cb(err);
+            });
+        },
+        function remap(_, cb) {
+            _.hLevel.remapVnode(_.node.pnode, _.node.vnode, function(err) {
+                t.ok(err, 'remapping vnode to the same pnode should throw');
+                return cb();
+            });
+        },
+    ], arg: {}}, function(err) {
+        if (err) {
+            t.fail(err);
+        }
+        t.done();
+    });
+});
+
+_testAllConstructors(function removeNonExistentPnode(algo, constructor, t) {
+    vasync.pipeline({funcs: [
+        function newRing(_, cb) {
+            constructor(algo, function(err, hLevel, hInMem) {
+                _.hLevel = hLevel;
+                _.hInMem = hInMem;
+                return cb(err);
+            });
+        },
+        function remap(_, cb) {
+            _.hLevel.removePnode('yunong', function(err) {
+                t.ok(err, 'removing non-existent pnode should throw');
+                return cb();
+            });
+        },
+    ], arg: {}}, function(err) {
+        if (err) {
+            t.fail(err);
+        }
+        t.done();
+    });
+});
+
+_testAllConstructors(function removeNonEmptyPnode(algo, constructor, t) {
+    vasync.pipeline({funcs: [
+        function newRing(_, cb) {
+            constructor(algo, function(err, hLevel, hInMem) {
+                _.hLevel = hLevel;
+                _.hInMem = hInMem;
+                return cb(err);
+            });
+        },
+        function pickVnode(_, cb) {
+            _.key = uuid.v4();
+            _.hLevel.getNode(_.key, function(err, node) {
+                _.node = node;
+                return cb(err);
+            });
+        },
+        function remap(_, cb) {
+            _.hLevel.removePnode(_.node.pnode, function(err) {
+                t.ok(err, 'removing non-empty pnode should throw');
+                return cb();
+            });
+        },
+    ], arg: {}}, function(err) {
+        if (err) {
+            t.fail(err);
+        }
+        t.done();
+    });
+});
+
 // private helpers
 function _verifyRing(h1, h2, t, algo, cb) {
     // XXX check validity of keys in leveldb.
+    vasync.pipeline({funcs: [
+        function checkVnodes(_, _cb) {
+            h1.db_.get(leveldb.LKEY_VNODE_COUNT, function(err, vnodeCount) {
+                if (err) {
+                    return _cb(new verror.VError(err));
+                }
+                t.ok(vnodeCount, 'VNODE_COUNT does not exist in leveldb');
+                t.equal(vnodeCount, NUMBER_OF_VNODES, 'vnode not equal');
+                return _cb();
+            });
+        },
+        function checkComplete(_, _cb) {
+            h1.db_.get(leveldb.LKEY_COMPLETE, function(err, value) {
+                if (err) {
+                    err = new verror.VError(err);
+                }
+                return _cb(err);
+            });
+        },
+        function checkVersion(_, _cb) {
+            _cb = once(_cb);
+            h1.db_.get(leveldb.LKEY_VERSION, function(err, version) {
+                if (err) {
+                    return _cb(new verror.VError(err));
+                }
+                try {
+                    fash.assertVersion(version);
+                    return _cb();
+                } catch(e) {
+                    return _cb(new verror.VError(e));
+                }
+            });
+        },
+        function checkSlashVnodeSlashN(_, _cb) {
+            // spot check /vnode/largestVnode
+            h1.db_.get(sprintf(leveldb.LKEY_VNODE_V, NUMBER_OF_VNODES - 1),
+                       function(err, pnode)
+            {
+                if (err) {
+                    err = new verror.VError(err);
+                }
+                t.ok(pnode, 'pnode does not exist in leveldb');
+                return _cb(err);
+            });
+        },
+        function getAlgorithm(_, _cb){
+            h1.db_.get(leveldb.LKEY_ALGORITHM, function(err, algorithm) {
+                if (err) {
+                    return _cb(new verror.VError(err));
+                }
+                t.ok(algorithm, 'ALGORITHM not exist in leveldb');
+                // algorithm is asserted by next function
 
-    // compare hashing of in_memory hash to lebeldb hash
-    var count = 0;
-    for (var i = 0; i < NUMBER_OF_KEYS; i++) {
-        var random = Math.random().toString(33);
-        var key = random.substring(Math.floor(Math.random() * random.length));
-        h1.getNode(key, (function(k, err, node1) {
-            var node2 = h2.getNode(k);
-            LOG.debug({
-                err: err,
-                key: k,
-                node1: node1,
-                node2: node2,
-                count: count
-            }, 'returned from getNode');
+                return _cb();
+            });
+        },
+        function verifyAgainstInMem(_, cb) {
+            // compare hashing of in_memory hash to the leveldb hash
+            var count = 0;
+            for (var i = 0; i < NUMBER_OF_KEYS; i++) {
+                var random = Math.random().toString(33);
+                var key = random.substring(Math.floor(Math.random() * random.length));
+                h1.getNode(key, (function(k, err, node1) {
+                    var node2 = h2.getNode(k);
+                    LOG.debug({
+                        err: err,
+                        key: k,
+                        node1: node1,
+                        node2: node2,
+                        count: count
+                    }, 'returned from getNode');
 
-            if (err) {
-                t.fail(err);
-                return cb();
+                    if (err) {
+                        return cb(err);
+                    }
+                    t.strictEqual(node1.pnode, node2.pnode, 'hashed node ' +
+                                  util.inspect(node1) +
+                                  ' does not match test in-mem hash' +
+                                  util.inspect(node2));
+                    t.strictEqual(node1.vnode, node2.vnode, 'hashed node ' +
+                                  util.inspect(node1) +
+                                  ' does not match test in-mem hash' +
+                                  util.inspect(node2));
+                    t.strictEqual(node1.data, node2.data, 'hashed node ' +
+                                  util.inspect(node1) +
+                                  ' does not match test in-mem hash' +
+                                  util.inspect(node2));
+                    if (++count === (NUMBER_OF_KEYS - 1)) {
+                        return cb();
+                    }
+                }).bind(this, key));
             }
-            t.strictEqual(node1.pnode, node2.pnode, 'hashed node ' +
-                          util.inspect(node1) +
-                          ' does not match test in-mem hash' +
-                          util.inspect(node2));
-            t.strictEqual(node1.vnode, node2.vnode, 'hashed node ' +
-                          util.inspect(node1) +
-                          ' does not match test in-mem hash' +
-                          util.inspect(node2));
-            t.strictEqual(node1.data, node2.data, 'hashed node ' +
-                          util.inspect(node1) +
-                          ' does not match test in-mem hash' +
-                          util.inspect(node2));
-            if (++count === (NUMBER_OF_KEYS - 1)) {
-                return cb();
-            }
-        }).bind(this, key));
-    }
+        }
+    ], arg: {}}, function(err) {
+        if (err) {
+            t.fail(err);
+        }
+        t.done();
+    });
 }
 
 function _newRing(algo, cb) {
