@@ -11,7 +11,7 @@ var LOG = new Logger({
     src: true,
     level: process.env.LOG_LEVEL || 'warn'
 });
-var NUMBER_OF_KEYS = parseInt(process.env.NUMBER_OF_KEYS || 10, 10);
+var NUMBER_OF_KEYS = parseInt(process.env.NUMBER_OF_KEYS || 1000, 10);
 var NUMBER_OF_VNODES = parseInt(process.env.NUMBER_OF_VNODES || 100);
 var NUMBER_OF_PNODES = parseInt(process.env.NUMBER_OF_PNODES || 10);
 var PNODES = new Array(NUMBER_OF_PNODES);
