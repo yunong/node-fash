@@ -18,7 +18,41 @@ practice, pnodes are usuall physical shards or servers in a distributed system.
 This gives the flexibility of mutating the hashspace of pnodes and the number
 of pnodes by re-mapping the vnode assignments.
 
+# Backends
+
+As of version 2, Fash supports both a leveldb backend as well as an in-memory
+backend. The leveldb backend has several advantages over the in-memory backend.
+Notably, performance at scale should be faster since the ring is no longer in
+v8. Also the ring can be persisted on disk via leveldb, removing the need to
+load the ring into memory when the process is restarted.
+
+To select a backend, simply pass in a backend object like so to fash.create();
+
+```javascript
+
+    var fash = require('fash');
+    var Logger = require('bunyan');
+
+    var LOG = new Logger({
+        name: 'fash',
+        level: 'info'
+    });
+
+    fash.create({
+        log: LOG, // optional [bunyan](https://github.com/trentm/node-bunyan) log object.
+        algorithm: 'sha-256', // Can be any algorithm supported by openssl.
+        pnodes: ['A', 'B', 'C', 'D', 'E'], // The set of physical nodes to insert into the ring.
+        vnodes: 1000000 // The virtual nodes to place onto the ring. Once set, this can't be changed for the lifetime of the ring.
+        backend: fash.BACKEND.LEVEL_DB,
+        location: '/tmp/chash'
+    }, function(err, chash) {
+        console.log('chash created');
+    });
+```
+
 # Example
+
+Most examples can be found in the unit tests. Here are a few.
 
 ## Boostrapping a New Hash Ring
 
@@ -35,6 +69,7 @@ of pnodes by re-mapping the vnode assignments.
         algorithm: 'sha-256', // Can be any algorithm supported by openssl.
         pnodes: ['A', 'B', 'C', 'D', 'E'], // The set of physical nodes to insert into the ring.
         vnodes: 1000000 // The virtual nodes to place onto the ring. Once set, this can't be changed for the lifetime of the ring.
+        backend: fash.BACKEND.IN_MEMORY
     });
 
     var node = chash.getNode('someKeyToHash');
@@ -70,6 +105,7 @@ consistent as well.
         log: LOG,
         algorithm: 'sha256',
         pnodes: ['A', 'B', 'C', 'D', 'E'],
+        backend: fash.BACKEND.IN_MEMORY,
         vnodes: 100000
     });
 
@@ -102,6 +138,7 @@ slow.
         log: LOG,
         algorithm: 'sha256',
         pnodes: ['A', 'B', 'C', 'D', 'E'],
+        backend: fash.BACKEND.IN_MEMORY,
         vnodes: 100000
     });
     // specify the set of virtual nodes to assign to the new physical node.
@@ -129,10 +166,11 @@ vnodes to another pnode, and then removing the pnode.
     });
 
     var chash = fash.create({
-            log: LOG,
-            algorithm: 'sha256',
-            pnodes: ['A', 'B', 'C', 'D', 'E'],
-            vnodes: 10000
+        log: LOG,
+        algorithm: 'sha256',
+        pnodes: ['A', 'B', 'C', 'D', 'E'],
+        backend: fash.BACKEND.IN_MEMORY,
+        vnodes: 10000
     });
 
     // get the vnodes that map to B
@@ -203,6 +241,7 @@ mentioned in the earlier bootstrapping section.
        log: LOG,
        algorithm: 'sha256',
        pnodes: ['A', 'B', 'C', 'D', 'E'],
+       backend: fash.BACKEND.IN_MEMORY,
        vnodes: 10000
     });
 

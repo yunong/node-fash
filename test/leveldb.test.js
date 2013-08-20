@@ -799,7 +799,8 @@ function _verifyRing(h1, h2, t, algo, cb) {
             var count = 0;
             for (var i = 0; i < NUMBER_OF_KEYS; i++) {
                 var random = Math.random().toString(33);
-                var key = random.substring(Math.floor(Math.random() * random.length));
+                var key = random.substring(Math.floor(Math.random() *
+                                                      random.length));
                 h1.getNode(key, (function(k, err, node1) {
                     var node2 = h2.getNode(k);
                     LOG.debug({
