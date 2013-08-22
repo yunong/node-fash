@@ -18,6 +18,7 @@ var LOG = new Logger({
     src: true,
     level: process.env.LOG_LEVEL || 'warn'
 });
+var TEST_ITERATIONS = process.env.TEST_ITERATIONS || 1;
 var FASH_CLI_PATH = process.env.FASH_CLI_PATH || './bin/fash.js';
 var NUMBER_OF_KEYS = parseInt(process.env.NUMBER_OF_KEYS || 1000, 10);
 var NUMBER_OF_VNODES = parseInt(process.env.NUMBER_OF_VNODES || 100);
@@ -162,6 +163,15 @@ _testAllConstructors(function remapSomeVnodeToAnother(algo, constructor, t) {
 });
 
 _testAllConstructors(function removePnode(algo, constructor, t) {
+    var rmPnodeIdx = ((PNODES.length - 1) * Math.random()).toFixed();
+    var rmPnode = PNODES[rmPnodeIdx];
+    var remapIdx;
+    if (rmPnodeIdx == 0) {
+        remapIdx = 1;
+    } else  {
+        remapIdx = rmPnodeIdx - 1;
+    }
+    var remapPnode = PNODES[remapIdx];
     vasync.pipeline({funcs: [
         function newRing(_, cb) {
             constructor(algo, function(err, hLevel, hInMem) {
@@ -171,16 +181,16 @@ _testAllConstructors(function removePnode(algo, constructor, t) {
             });
         },
         function getVnodes(_, cb) {
-            _.hLevel.getVnodes(PNODES[0], function(err, vnodes) {
+            _.hLevel.getVnodes(rmPnode, function(err, vnodes) {
                 _.vnodes = vnodes;
                 return cb(err);
             });
         },
         function remap(_, cb) {
-            _.hInMem.remapVnode(PNODES[1], _.vnodes);
+            _.hInMem.remapVnode(remapPnode, _.vnodes);
             var count = 0;
             // remap to the second pnode
-            _.hLevel.remapVnode(PNODES[1], _.vnodes[count++], remapCb);
+            _.hLevel.remapVnode(remapPnode, _.vnodes[count++], remapCb);
 
             // ensure serial invocations of remap
             function remapCb(err) {
@@ -190,26 +200,26 @@ _testAllConstructors(function removePnode(algo, constructor, t) {
                 if (count === _.vnodes.length) {
                     return cb();
                 }
-                _.hLevel.remapVnode(PNODES[1], _.vnodes[count++], remapCb);
+                _.hLevel.remapVnode(remapPnode, _.vnodes[count++], remapCb);
             };
         },
         function assertVnodes(_, cb) {
-            _.hLevel.getVnodes(PNODES[1], function(err, vnodes) {
+            _.hLevel.getVnodes(remapPnode, function(err, vnodes) {
                 if (err) {
                     return cb(err);
                 }
-                var inMemVnodes = _.hInMem.getVnodes(PNODES[1]);
+                var inMemVnodes = _.hInMem.getVnodes(remapPnode);
                 t.ok(lodash.isEqual(vnodes.sort(), inMemVnodes.sort()),
                               'level vnodes should equal in mem vnodes');
                 return cb();
             });
         },
         function removePnode(_, cb) {
-            _.hLevel.removePnode(PNODES[0], function(err) {
+            _.hLevel.removePnode(rmPnode, function(err) {
                 if (err) {
                     return cb(err);
                 }
-                _.hInMem.removePnode(PNODES[0]);
+                _.hInMem.removePnode(rmPnode);
                 return cb();
             });
         },
@@ -218,12 +228,26 @@ _testAllConstructors(function removePnode(algo, constructor, t) {
         },
         // removing the pnode again should throw
         function removePnodeAgain(_, cb) {
-            _.hLevel.removePnode(PNODES[0], function(err) {
+            _.hLevel.removePnode(rmPnode, function(err) {
                 if (!err) {
                     return cb(new Error('removing pnode again should throw'));
                 } else {
                     return cb();
                 }
+            });
+        },
+        function checkPnodes(_, cb) {
+            _.hLevel.getPnodes(function(err, pnodes) {
+                if (err) {
+                    return cb(err);
+                }
+
+                if (pnodes.indexOf(rmPnode) !== -1) {
+                    return cb(
+                        new Error('removed pnode still exists pnode array'));
+                }
+
+                return cb();
             });
         }
     ], arg: {}}, function(err) {
@@ -833,10 +857,7 @@ function _verifyRing(h1, h2, t, algo, cb) {
             }
         }
     ], arg: {}}, function(err) {
-        if (err) {
-            t.fail(err);
-        }
-        t.done();
+        return cb(err);
     });
 }
 
@@ -856,7 +877,7 @@ function _newRing(algo, cb) {
             log: new Logger({
                 name: 'test-hash',
                 src: true,
-                level: 'fatal'
+                level: process.env.LOG_LEVEL_MEM || 'fatal'
             }),
             algorithm: algo,
             pnodes: PNODES,
@@ -948,17 +969,22 @@ function _newRingFromTopology(algo, cb) {
 }
 
 function _testAllAlgorithms(test) {
-    ALGORITHM.forEach(function(algo) {
-        exports[test.name + algo] = test.bind(null, algo);
-    });
+    for (var i = 0; i < TEST_ITERATIONS; i++) {
+        ALGORITHM.forEach(function(algo) {
+            exports[test.name + algo + i] = test.bind(null, algo);
+        });
+    }
 }
 
 function _testAllConstructors(test) {
-    ALGORITHM.forEach(function(algo) {
-        exports[test.name + algo + 'new'] = test.bind(null, algo, _newRing);
-        exports[test.name + algo + 'fromDb'] =
-            test.bind(null, algo, _newRingFromDb);
-        exports[test.name + algo + 'fromTopology'] =
-            test.bind(null, algo, _newRingFromTopology);
-    });
+    for (var i = 0; i < TEST_ITERATIONS; i++) {
+        ALGORITHM.forEach(function(algo) {
+            exports[test.name + algo + 'new' + i] =
+                test.bind(null, algo, _newRing);
+            exports[test.name + algo + 'fromDb' + i] =
+                test.bind(null, algo, _newRingFromDb);
+            exports[test.name + algo + 'fromTopology' + i] =
+                test.bind(null, algo, _newRingFromTopology);
+        });
+    }
 }
