@@ -672,4 +672,186 @@ Fash.prototype.do_print_hash.help = (
     + '{{options}}'
 );
 
+Fash.prototype.do_diff = function (subcmd, opts, args, callback) {
+    var self = this;
+
+    if (opts.help || args.length !== 2 ||
+        (args[0] === '-' && args[1] === '-')) {
+
+        this.do_help('help', {}, [subcmd], callback);
+        return (callback());
+    }
+
+    function chooseBackend(b) {
+        if (b === BACKENDS.IN_MEMORY) {
+            return (fash.BACKEND.IN_MEMORY);
+        } else if (b === BACKENDS.LEVEL_DB) {
+            return (fash.BACKEND.LEVEL_DB);
+        } else {
+            console.error('one of %j must be specified if not passing ' +
+                          'topology via stdin', BACKENDS);
+            return (callback());
+        }
+    }
+
+    function chooseConstructor(b) {
+        if (b === BACKENDS.IN_MEMORY) {
+            return (fash.deserialize);
+        } else if (b === BACKENDS.LEVEL_DB) {
+            return (fash.load);
+        } else {
+            console.error('one of %j must be specified if not passing ' +
+                          'topology via stdin', BACKENDS);
+            return (callback());
+        }
+    }
+
+    function loadHash(hashOptions, l, cb) {
+        if (hashOptions.backend === fash.BACKEND.IN_MEMORY) {
+            if (l === '-') {
+                hashOptions.topology = '';
+                process.stdin.resume();
+                process.stdin.setEncoding('utf8');
+
+                process.stdin.on('data', function(chunk) {
+                    hashOptions.topology += chunk;
+                });
+
+                process.stdin.on('end', function() {
+                    return (cb(null, hashOptions));
+                });
+            } else {
+                hashOptions.topology = fs.readFileSync(l, 'utf8');
+                return (cb(null, hashOptions));
+            }
+        } else if (hashOptions.backend === fash.BACKEND.LEVEL_DB) {
+                hashOptions.location = l;
+                return (cb(null, hashOptions));
+        } else {
+            console.error('one of %j must be specified if not passing ' +
+                          'topology via stdin', BACKENDS);
+            return (callback());
+        }
+    }
+
+    var constructor1, constructor2, hash1, hash2;
+    var hashOptions1 = { log: self.log };
+    var hashOptions2 = { log: self.log };
+    var diff = {};
+
+    if (!opts.b) {
+        hashOptions1.backend = fash.BACKEND.IN_MEMORY;
+        hashOptions2.backend = fash.BACKEND.IN_MEMORY;
+        constructor1 = fash.deserialize;
+        constructor2 = fash.deserialize;
+    } else {
+        var i = 0;
+        while (i < opts._order.length) {
+            if (opts._order[i].key === 'b') {
+                hashOptions1.backend = chooseBackend(opts._order[i].value);
+                constructor1 = chooseConstructor(opts._order[i].value);
+                hashOptions2.backend = chooseBackend(opts._order[i].value);
+                constructor2 = chooseConstructor(opts._order[i].value);
+                i++;
+                break;
+            }
+            i++;
+        }
+        while (i < opts._order.length) {
+            if (opts._order[i].key === 'b') {
+                hashOptions2.backend = chooseBackend(opts._order[i].value);
+                constructor2 = chooseConstructor(opts._order[i].value);
+                break;
+            }
+            i++;
+        }
+    }
+
+    vasync.pipeline({funcs: [
+        function loadFirst(_, cb) {
+            loadHash(hashOptions1, args[0], function (err, hashOptions) {
+                hash1 = constructor1(hashOptions, cb);
+            });
+        },
+        function loadSecond(_, cb) {
+            loadHash(hashOptions2, args[1], function (err, hashOptions) {
+                hash2 = constructor2(hashOptions, cb);
+            });
+        },
+        function removed(_, cb) {
+            hash1.getPnodes(function (err, pnodes) {
+                pnodes.forEach(function (pnode) {
+                    if (!hash2.pnodeToVnodeMap_[pnode]) {
+                        diff[pnode] = diff[pnode] || {};
+                        diff[pnode]['removed'] =
+                            Object.keys(hash1.pnodeToVnodeMap_[pnode]);
+                    } else {
+                        vnodes = Object.keys(hash1.pnodeToVnodeMap_[pnode]);
+                        for (var j = 0; j < vnodes.length; j++) {
+                            if (!hash2.pnodeToVnodeMap_[pnode][vnodes[j]]) {
+                                diff[pnode] = diff[pnode] || {};
+                                diff[pnode]['removed'] =
+                                    diff[pnode]['removed'] || [];
+                                diff[pnode]['removed'].push(vnodes[j]);
+                            }
+                        }
+                    }
+                });
+                return (cb());
+            });
+        },
+        function added(_, cb) {
+            hash2.getPnodes(function (err, pnodes) {
+                pnodes.forEach(function (pnode) {
+                    if (!hash1.pnodeToVnodeMap_[pnode]) {
+                        diff[pnode] = diff[pnode] || {};
+                        diff[pnode]['added'] =
+                            Object.keys(hash2.pnodeToVnodeMap_[pnode]);
+                    } else {
+                        vnodes = Object.keys(hash2.pnodeToVnodeMap_[pnode]);
+                        for (var j = 0; j < vnodes.length; j++) {
+                            if (!hash1.pnodeToVnodeMap_[pnode][vnodes[j]]) {
+                                diff[pnode] = diff[pnode] || {};
+                                diff[pnode]['added'] =
+                                    diff[pnode]['added'] || [];
+                                diff[pnode]['added'].push(vnodes[j]);
+                            }
+                        }
+                    }
+                });
+                return (cb());
+            });
+        },
+        function print(_, cb) {
+            if (Object.keys(diff).length) {
+                console.log(JSON.stringify(diff));
+            }
+        }
+    ]}, function (err) {
+        if (err) {
+            console.error(err);
+        }
+    });
+};
+Fash.prototype.do_diff.options = [{
+    names: ['b', 'backend'],
+    type: 'string',
+    help: 'the backend to use'
+}];
+Fash.prototype.do_diff.help = (
+    'compare two topologies'
+    + '\n'
+    + 'usage:\n'
+    + '     fash diff [options] FILE1 FILE2\n'
+    + '     cat ring1.json | fash diff - ring2.json\n'
+    + '     fash diff -b leveldb ring1.json ring2.json\n'
+    + '\n'
+    + '{{options}}'
+    + '\n'
+    + 'If FILE1 or FILE2 is \'-\', read standard input.\n'
+    + 'You can use different backends for each input by specifying -b twice:\n'
+    + '    fash diff -b leveldb -b memory leveldbdir ring.json'
+    
+);
+
 cmdln.main(Fash); // mainline
