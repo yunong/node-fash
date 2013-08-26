@@ -436,6 +436,17 @@ _testAllConstructors(function addData(algo, constructor, t) {
                 return cb();
             });
         },
+        function checkVnodeArray(_, cb) {
+            _.hLevel.getDataVnodes(function(err, vnodeArray) {
+                if (err) {
+                    return cb(err);
+                }
+                t.ok((vnodeArray.indexOf(_.node.vnode) !== -1), 'vnode ' +
+                     _.node.vnode + ' is not in the vnode array');
+
+                return cb();
+            });
+        },
         function verify(_, cb) {
             _verifyRing(_.hLevel, _.hInMem, t, algo, cb);
         },
@@ -487,6 +498,17 @@ _testAllConstructors(function addDataRemapVnodeToDifferentPnode(algo,
                 }
                 t.strictEqual(node.data, 'foo',
                               'stored data should match put data');
+                return cb();
+            });
+        },
+        function checkVnodeArray(_, cb) {
+            _.hLevel.getDataVnodes(function(err, vnodeArray) {
+                if (err) {
+                    return cb(err);
+                }
+                t.ok((vnodeArray.indexOf(_.node.vnode) !== -1), 'vnode ' +
+                     _.node.vnode + ' is not in the vnode array');
+
                 return cb();
             });
         },
