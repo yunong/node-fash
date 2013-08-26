@@ -458,6 +458,62 @@ _testAllConstructors(function addData(algo, constructor, t) {
     });
 });
 
+_testAllConstructors(function addDataBackToNull(algo, constructor, t) {
+    vasync.pipeline({funcs: [
+        function newRing(_, cb) {
+            constructor(algo, function(err, hLevel, hInMem) {
+                _.hLevel = hLevel;
+                _.hInMem = hInMem;
+                return cb(err);
+            });
+        },
+        function pickVnode(_, cb) {
+            _.key = uuid.v4();
+            _.hLevel.getNode(_.key, function(err, node) {
+                _.node = node;
+                return cb(err);
+            });
+        },
+        function addData(_, cb) {
+            _.hLevel.addData(_.node.vnode, 'foo', cb);
+            _.hInMem.addData(_.node.vnode, 'foo');
+        },
+        function getData(_, cb) {
+            _.hLevel.getNode(_.key, function(err, node) {
+                if (err) {
+                    return cb(err);
+                }
+                t.strictEqual(node.data, 'foo',
+                              'stored data should match put data');
+                return cb();
+            });
+        },
+        function removeData(_, cb) {
+            _.hInMem.addData(_.node.vnode, undefined);
+            _.hLevel.addData(_.node.vnode, undefined, cb);
+        },
+        function checkVnodeArray(_, cb) {
+            _.hLevel.getDataVnodes(function(err, vnodeArray) {
+                if (err) {
+                    return cb(err);
+                }
+                t.ok((vnodeArray.indexOf(_.node.vnode) === -1), 'vnode ' +
+                     _.node.vnode + ' is in the vnode array');
+
+                return cb();
+            });
+        },
+        function verify(_, cb) {
+            _verifyRing(_.hLevel, _.hInMem, t, algo, cb);
+        },
+    ], arg: {}}, function(err) {
+        if (err) {
+            t.fail(err);
+        }
+        t.done();
+    });
+});
+
 _testAllConstructors(function addDataRemapVnodeToDifferentPnode(algo,
                                                                 constructor,
                                                                 t)

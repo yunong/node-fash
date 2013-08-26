@@ -290,6 +290,8 @@ _testAllAlgorithms(function add_data(algo, t) {
     var pnode = chash.vnodeToPnodeMap_[vnode].pnode;
     t.equal(chash.pnodeToVnodeMap_[pnode][vnode], 'foo',
         'stored data should match put data');
+    t.ok((chash.getDataVnodes().indexOf(vnode) !== -1),
+            'vnode dne in vnode data array');
     _verifyRing(chash, t, algo, function() {
         t.done();
     });
@@ -313,6 +315,8 @@ _testAllAlgorithms(function add_data_remap_vnode_to_different_pnode(algo, t) {
         }
     }
     chash.addData(vnode, 'foo');
+    t.ok((chash.getDataVnodes().indexOf(vnode) !== -1),
+            'vnode dne in vnode data array');
 
     // remap all to B
     chash.remapVnode(pnode, [vnode], function(ring, pnodes) {
@@ -351,6 +355,8 @@ _testAllAlgorithms(function add_data_serialize_deserialize(algo, t) {
         'stored data should match put data in serialized hash');
     t.equal(chash2.pnodeToVnodeMap_[pnode][vnode], 'foo',
         'stored data should match put data in serialized hash');
+    t.ok((chash.getDataVnodes().indexOf(vnode) !== -1),
+            'vnode dne in vnode data array');
 
     _verifyRing(chash2, t, algo, function() {
         for (var i = 0; i < NUMBER_OF_KEYS; i++) {
@@ -383,6 +389,8 @@ _testAllAlgorithms(function add_data_overwrite(algo, t) {
     var pnode = chash.vnodeToPnodeMap_[vnode].pnode;
     t.equal(chash.pnodeToVnodeMap_[pnode][vnode], 'bar',
         'replaced data should match put data');
+    t.ok((chash.getDataVnodes().indexOf(vnode) !== -1),
+            'vnode dne in vnode data array');
     _verifyRing(chash, t, algo, function() {
         t.done();
     });
@@ -400,11 +408,13 @@ _testAllAlgorithms(function add_data_overwrite_with_null(algo, t) {
     var vnode = parseInt(NUMBER_OF_VNODES * Math.random(), 10);
     chash.addData(vnode, 'foo');
     chash.addData(vnode, null);
-    t.equal(chash.vnodeToPnodeMap_[vnode].data, null,
+    t.equal(chash.vnodeToPnodeMap_[vnode].data, 1,
         'deleted data should be null');
     var pnode = chash.vnodeToPnodeMap_[vnode].pnode;
-    t.equal(chash.pnodeToVnodeMap_[pnode][vnode], null,
+    t.equal(chash.pnodeToVnodeMap_[pnode][vnode], 1,
         'deleted data should be null');
+    t.ok((chash.getDataVnodes().indexOf(vnode) === -1),
+            'vnode should not exist in vnode data array');
     _verifyRing(chash, t, algo, function() {
         t.done();
     });
