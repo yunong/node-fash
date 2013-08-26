@@ -41,6 +41,7 @@
     "verror": "1.3.6"
   },
   "devDependencies": {
+    "node-uuid": "1.4.1",
     "nodeunit": "0.8.1",
     "bunyan": "*",
     "lodash": "1.3.1"

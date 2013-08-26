@@ -672,4 +672,239 @@ Fash.prototype.do_print_hash.help = (
     + '{{options}}'
 );
 
+Fash.prototype.do_diff = function (subcmd, opts, args, callback) {
+    var self = this;
+
+    if (opts.help || args.length !== 2 ||
+        (args[0] === '-' && args[1] === '-')) {
+
+        this.do_help('help', {}, [subcmd], callback);
+        return (callback());
+    }
+
+    function chooseBackend(b) {
+        if (b === BACKENDS.IN_MEMORY) {
+            return (fash.BACKEND.IN_MEMORY);
+        } else if (b === BACKENDS.LEVEL_DB) {
+            return (fash.BACKEND.LEVEL_DB);
+        } else {
+            console.error('one of %j must be specified if not passing ' +
+                          'topology via stdin', BACKENDS);
+            return (callback());
+        }
+    }
+
+    function chooseConstructor(b) {
+        if (b === BACKENDS.IN_MEMORY) {
+            return (fash.deserialize);
+        } else if (b === BACKENDS.LEVEL_DB) {
+            return (fash.load);
+        } else {
+            console.error('one of %j must be specified if not passing ' +
+                          'topology via stdin', BACKENDS);
+            return (callback());
+        }
+    }
+
+    function loadHash(hashOptions, l, cb) {
+        if (hashOptions.backend === fash.BACKEND.IN_MEMORY) {
+            if (l === '-') {
+                hashOptions.topology = '';
+                process.stdin.resume();
+                process.stdin.setEncoding('utf8');
+
+                process.stdin.on('data', function(chunk) {
+                    hashOptions.topology += chunk;
+                });
+
+                process.stdin.on('end', function() {
+                    return (cb(null, hashOptions));
+                });
+                return (undefined);
+            } else {
+                hashOptions.topology = fs.readFileSync(l, 'utf8');
+                return (cb(null, hashOptions));
+            }
+        } else if (hashOptions.backend === fash.BACKEND.LEVEL_DB) {
+                hashOptions.location = l;
+                return (cb(null, hashOptions));
+        } else {
+            console.error('one of %j must be specified if not passing ' +
+                          'topology via stdin', BACKENDS);
+            return (callback());
+        }
+    }
+
+    var pnodes, constructor1, constructor2, hash1, hash2, opts_i;
+    var hashOptions1 = { log: self.log };
+    var hashOptions2 = { log: self.log };
+    var diff = {};
+
+    if (!opts.b) {
+        hashOptions1.backend = fash.BACKEND.IN_MEMORY;
+        hashOptions2.backend = fash.BACKEND.IN_MEMORY;
+        constructor1 = fash.deserialize;
+        constructor2 = fash.deserialize;
+    } else {
+        opts_i = 0;
+        while (opts_i < opts._order.length) {
+            if (opts._order[opts_i].key === 'b') {
+                hashOptions1.backend = chooseBackend(opts._order[opts_i].value);
+                constructor1 = chooseConstructor(opts._order[opts_i].value);
+                hashOptions2.backend = chooseBackend(opts._order[opts_i].value);
+                constructor2 = chooseConstructor(opts._order[opts_i].value);
+                opts_i++;
+                break;
+            }
+            opts_i++;
+        }
+        while (opts_i < opts._order.length) {
+            if (opts._order[opts_i].key === 'b') {
+                hashOptions2.backend = chooseBackend(opts._order[opts_i].value);
+                constructor2 = chooseConstructor(opts._order[opts_i].value);
+                break;
+            }
+            opts_i++;
+        }
+    }
+
+    vasync.pipeline({funcs: [
+        function load1(_, cb) {
+            loadHash(hashOptions1, args[0], function (err, hashOptions) {
+                hash1 = constructor1(hashOptions, cb);
+            });
+        },
+        function load2(_, cb) {
+            loadHash(hashOptions2, args[1], function (err, hashOptions) {
+                hash2 = constructor2(hashOptions, cb);
+            });
+        },
+        function getPnodes1(_, cb) {
+            hash1.getPnodes(function (err, pnodes1) {
+                if (err) {
+                    return (cb(err));
+                }
+                pnodes = pnodes1;
+                return (cb());
+            });
+        },
+        function getPnodes2(_, cb) {
+            hash2.getPnodes(function (err, pnodes2) {
+                if (err) {
+                    return (cb(err));
+                }
+                pnodes = pnodes.concat(pnodes2);
+                return (cb());
+            });
+        },
+        function doDiff(_, cb) {
+
+            function compare(pnode, comparecb) {
+                var vnodes1, vnodes2;
+                vasync.pipeline({funcs: [
+                    function getVnodes1(__, subcb) {
+                        hash1.getVnodes(pnode, function (err, vnodes) {
+                            if (err) {
+                                vnodes1 = null;
+                                return (subcb());
+                            }
+                            vnodes1 = vnodes;
+                            return (subcb());
+                        });
+                    },
+                    function getVnodes2(__, subcb) {
+                        hash2.getVnodes(pnode, function (err, vnodes) {
+                            if (err) {
+                                vnodes2 = null;
+                                return (subcb());
+                            }
+                            vnodes2 = vnodes;
+                            return (subcb());
+                        });
+                    }
+                ]}, function (err, results) {
+                    if (!vnodes1) {
+                        diff[pnode] = diff[pnode] || {};
+                        diff[pnode]['added'] = vnodes2;
+                    } else if (!vnodes2) {
+                        diff[pnode] = diff[pnode] || {};
+                        diff[pnode]['removed'] = vnodes1;
+                    } else {
+                        function mergeDiff(a, b) {
+                            var i = 0;
+                            var j = 0;
+                            var difference = [];
+                            while (i < a.length && j < b.length) {
+                                if (a[i] === b[j]) {
+                                    i++;
+                                    j++;
+                                } else if (a[i] < b[j]) {
+                                    difference.push(a[i]);
+                                    i++;
+                                } else {
+                                    j++;
+                                }
+                            }
+
+                            while (i < a.length) {
+                                difference.push(a[i]);
+                                i++;
+                            }
+
+                            return (difference);
+                        }
+
+                        var removed = mergeDiff(vnodes1, vnodes2);
+                        var added = mergeDiff(vnodes2, vnodes1);
+                        if (removed.length || added.length ) {
+                            diff[pnode] = diff[pnode] || {};
+                            if (removed.length) {
+                                diff[pnode]['removed'] = removed;
+                            }
+                            if (added.length) {
+                                diff[pnode]['added'] = added;
+                            }
+                        }
+                    }
+                    return (comparecb());
+                });
+            }
+
+            vasync.forEachParallel({
+                func: compare,
+                inputs: pnodes
+            }, function (err, results) {
+                if (Object.keys(diff).length) {
+                    console.log(JSON.stringify(diff));
+                }
+                return (cb());
+            });
+        }
+    ]}, function (err) {
+        if (err) {
+            console.error(err);
+        }
+    });
+    return (undefined);
+};
+Fash.prototype.do_diff.options = [{
+    names: ['b', 'backend'],
+    type: 'string',
+    help: 'the backend to use'
+}];
+Fash.prototype.do_diff.help = (
+    'compare two topologies'
+    + '\n'
+    + 'usage:\n'
+    + '     fash diff [options] FILE1 FILE2\n'
+    + '     cat ring1.json | fash diff - ring2.json\n'
+    + '     fash diff -b leveldb ring1.json ring2.json\n'
+    + '\n'
+    + '{{options}}'
+    + '\n'
+    + 'If FILE1 or FILE2 is \'-\', read standard input (in memory only).\n'
+    + 'You can use different backends for each input by specifying -b twice:\n'
+    + '    fash diff -b leveldb -b memory leveldbdir ring.json'
+);
+
 cmdln.main(Fash); // mainline
