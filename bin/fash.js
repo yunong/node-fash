@@ -129,7 +129,7 @@ Fash.prototype.do_create.help = (
     + '{{options}}'
 );
 
-Fash.prototype.do_load_ring = function(subcmd, opts, args, callback) {
+Fash.prototype.do_deserialize_ring = function(subcmd, opts, args, callback) {
     var self = this;
     if (opts.help) {
         this.do_help('help', {}, [subcmd], callback);
@@ -143,11 +143,9 @@ Fash.prototype.do_load_ring = function(subcmd, opts, args, callback) {
 
     var hashOptions = {
         log: self.log,
-        backend: fash.BACKEND.IN_MEMORY,
+        backend: fash.BACKEND.LEVEL_DB,
         location: opts.l
     };
-    var hash;
-    var constructor = fash.deserialize;
 
     vasync.pipeline({funcs: [
         function prepInput(_, cb) {
@@ -170,7 +168,7 @@ Fash.prototype.do_load_ring = function(subcmd, opts, args, callback) {
             return (undefined);
         },
         function loadRing(_, cb) {
-            hash = constructor(hashOptions, cb);
+            fash.deserialize(hashOptions, cb);
         }
     ], arg: {}}, function(err) {
         if (err) {
@@ -179,7 +177,7 @@ Fash.prototype.do_load_ring = function(subcmd, opts, args, callback) {
     });
     return (undefined);
 };
-Fash.prototype.do_load_ring.options = [{
+Fash.prototype.do_deserialize_ring.options = [{
     names: [ 'l', 'location' ],
     type: 'string',
     help: 'the level db path where the ring is to be stored'
@@ -188,12 +186,12 @@ Fash.prototype.do_load_ring.options = [{
     type: 'string',
     help: 'the optional location of the serialized topology'
 }];
-Fash.prototype.do_load_ring.help = (
+Fash.prototype.do_deserialize_ring.help = (
     'load a hash ring into leveldb. Accepts input over stdin or via a file.\n'
     + '\n'
     + 'usage:\n'
-    + '     fash load_ring [options] \n'
-    + '     cat /tmp/example_ring.json | fash load_ring [options] \n'
+    + '     fash deserialize_ring [options] \n'
+    + '     cat /tmp/example_ring.json | fash deserialize_ring [options] \n'
     + '\n'
     + '{{options}}'
 );
