@@ -129,6 +129,75 @@ Fash.prototype.do_create.help = (
     + '{{options}}'
 );
 
+Fash.prototype.do_load_ring = function(subcmd, opts, args, callback) {
+    var self = this;
+    if (opts.help) {
+        this.do_help('help', {}, [subcmd], callback);
+        return (callback());
+    }
+
+    if (args.length !== 0 || !opts.l) {
+        this.do_help('help', {}, [subcmd], callback);
+        return (callback());
+    }
+
+    var hashOptions = {
+        log: self.log,
+        backend: fash.BACKEND.IN_MEMORY,
+        location: opts.l
+    };
+    var hash;
+    var constructor = fash.deserialize;
+
+    vasync.pipeline({funcs: [
+        function prepInput(_, cb) {
+            if (opts.f) {
+                hashOptions.topology = fs.readFileSync(opts.f, 'utf8');
+                return cb();
+            } else { // read from stdin
+                hashOptions.topology = '';
+                process.stdin.resume();
+                process.stdin.setEncoding('utf8');
+
+                process.stdin.on('data', function(chunk) {
+                    hashOptions.topology += chunk;
+                });
+
+                process.stdin.on('end', function() {
+                    return cb();
+                });
+            }
+            return (undefined);
+        },
+        function loadRing(_, cb) {
+            hash = constructor(hashOptions, cb);
+        }
+    ], arg: {}}, function(err) {
+        if (err) {
+            console.error(err);
+        }
+    });
+    return (undefined);
+};
+Fash.prototype.do_load_ring.options = [{
+    names: [ 'l', 'location' ],
+    type: 'string',
+    help: 'the level db path where the ring is to be stored'
+}, {
+    names: [ 'f', 'file' ],
+    type: 'string',
+    help: 'the optional location of the serialized topology'
+}];
+Fash.prototype.do_load_ring.help = (
+    'load a hash ring into leveldb. Accepts input over stdin or via a file.\n'
+    + '\n'
+    + 'usage:\n'
+    + '     fash load_ring [options] \n'
+    + '     cat /tmp/example_ring.json | fash load_ring [options] \n'
+    + '\n'
+    + '{{options}}'
+);
+
 Fash.prototype.do_add_data = function(subcmd, opts, args, callback) {
     var self = this;
     if (opts.help) {
@@ -240,7 +309,9 @@ Fash.prototype.do_add_data.options = [{
 }, {
     names: [ 'l', 'location' ],
     type: 'string',
-    help: 'the location of the topology'
+    help: 'the location of the topology, if using the in_memory backend, \n' +
+          'this is the location of the serialized ring on disk, if using \n ' +
+          'the leveldb backend, this is the path to the levedb on disk.'
 }, {
     names: [ 'o', 'output' ],
     type: 'bool',
@@ -365,7 +436,9 @@ Fash.prototype.do_remap_vnode.options = [{
 }, {
     names: [ 'l', 'location' ],
     type: 'string',
-    help: 'the location of the topology'
+    help: 'the location of the topology, if using the in_memory backend, \n' +
+          'this is the location of the serialized ring on disk, if using \n ' +
+          'the leveldb backend, this is the path to the levedb on disk.'
 }, {
     names: [ 'o', 'output' ],
     type: 'bool',
@@ -465,7 +538,9 @@ Fash.prototype.do_remove_pnode = function(subcmd, opts, args, callback) {
 Fash.prototype.do_remove_pnode.options = [{
     names: [ 'l', 'location' ],
     type: 'string',
-    help: 'the location of the topology'
+    help: 'the location of the topology, if using the in_memory backend, \n' +
+          'this is the location of the serialized ring on disk, if using \n ' +
+          'the leveldb backend, this is the path to the levedb on disk.'
 }, {
     names: [ 'p', 'pnode' ],
     type: 'string',
@@ -567,7 +642,9 @@ Fash.prototype.do_get_node = function(subcmd, opts, args, callback) {
 Fash.prototype.do_get_node.options = [{
     names: [ 'l', 'location' ],
     type: 'string',
-    help: 'the location of the topology'
+    help: 'the location of the topology, if using the in_memory backend, \n' +
+          'this is the location of the serialized ring on disk, if using \n ' +
+          'the leveldb backend, this is the path to the levedb on disk.'
 }, {
     names: [ 'b', 'backend' ],
     type: 'string',
@@ -657,7 +734,9 @@ Fash.prototype.do_print_hash = function(subcmd, opts, args, callback) {
 Fash.prototype.do_print_hash.options = [{
     names: [ 'l', 'location' ],
     type: 'string',
-    help: 'the location of the topology'
+    help: 'the location of the topology, if using the in_memory backend, \n' +
+          'this is the location of the serialized ring on disk, if using \n ' +
+          'the leveldb backend, this is the path to the levedb on disk.'
 }, {
     names: [ 'b', 'backend' ],
     type: 'string',

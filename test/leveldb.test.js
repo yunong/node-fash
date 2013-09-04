@@ -47,10 +47,11 @@ _testAllConstructors(function newRing(algo, constructor, t) {
         if (err) {
             t.fail(err);
             t.done();
+        } else {
+            _verifyRing(hLevel, hInMem, t, algo, function() {
+                t.done();
+            });
         }
-        _verifyRing(hLevel, hInMem, t, algo, function() {
-            t.done();
-        });
     });
 });
 
@@ -981,10 +982,19 @@ function _newRingFromDb(algo, callback) {
             });
         },
         function createRingFromDb(_, cb) {
+            // set errorIfExists to false. The db already exists since we just
+            // created it in a new process.
+            var lvlCfg= {
+                createIfMissing: true,
+                errorIfExists: false,
+                compression: false,
+                cacheSize: 800 * 1024 * 1024
+            }
             h1 = fash.load({
                 log: LOG,
                 backend: fash.BACKEND.LEVEL_DB,
-                location: location
+                location: location,
+                leveldbCfg: lvlCfg
             }, function(err) {
                 if (err) {
                     return cb(err);
