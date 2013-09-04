@@ -45,13 +45,15 @@ Fash.prototype.do_create = function(subcmd, opts, args, callback) {
     var self = this;
 
     if (opts.help) {
-        this.do_help('help', {}, [subcmd], callback);
-        return (callback());
+        this.do_help('help', {}, [subcmd], function(err) {
+            return callback(err ? err : true);
+        });
     }
 
     if (args.length !== 0 || !opts.v || !opts.p) {
-        this.do_help('help', {}, [subcmd], callback);
-        return (callback(false));
+        this.do_help('help', {}, [subcmd], function(err) {
+            return callback(err ? err : true);
+        });
     }
 
     var pnodes = opts.p.split(' ');
@@ -76,13 +78,13 @@ Fash.prototype.do_create = function(subcmd, opts, args, callback) {
     }, function(err, chash) {
         if (err) {
             console.error(err);
-            return callback(false);
+            return callback(err);
         }
 
         chash.serialize(function(_err, sh) {
             if (_err) {
                 console.error(_err);
-                return callback(false);
+                return callback(_err);
             }
             if (opts.o) {
                 console.log(sh);
@@ -132,13 +134,15 @@ Fash.prototype.do_create.help = (
 Fash.prototype.do_deserialize_ring = function(subcmd, opts, args, callback) {
     var self = this;
     if (opts.help) {
-        this.do_help('help', {}, [subcmd], callback);
-        return (callback());
+        this.do_help('help', {}, [subcmd], function(err) {
+            return callback(err ? err : true);
+        });
     }
 
     if (args.length !== 0 || !opts.l) {
-        this.do_help('help', {}, [subcmd], callback);
-        return (callback());
+        this.do_help('help', {}, [subcmd], function(err) {
+            return callback(err ? err : true);
+        });
     }
 
     var hashOptions = {
@@ -174,6 +178,7 @@ Fash.prototype.do_deserialize_ring = function(subcmd, opts, args, callback) {
         if (err) {
             console.error(err);
         }
+        return callback(err);
     });
     return (undefined);
 };
@@ -199,13 +204,15 @@ Fash.prototype.do_deserialize_ring.help = (
 Fash.prototype.do_add_data = function(subcmd, opts, args, callback) {
     var self = this;
     if (opts.help) {
-        this.do_help('help', {}, [subcmd], callback);
-        return (callback());
+        this.do_help('help', {}, [subcmd], function(err) {
+            return callback(err ? err : true);
+        });
     }
 
     if (args.length !== 0 || !opts.v || !opts.d) {
-        this.do_help('help', {}, [subcmd], callback);
-        return (callback());
+        this.do_help('help', {}, [subcmd], function(err) {
+            return callback(err ? err : true);
+        });
     }
 
     var hashOptions = {
@@ -239,8 +246,9 @@ Fash.prototype.do_add_data = function(subcmd, opts, args, callback) {
                 hashOptions.backend = fash.BACKEND.LEVEL_DB;
                 constructor = fash.load;
                 if (!opts.l) {
-                    this.do_help('help', {}, [subcmd], callback);
-                    return (callback());
+                    this.do_help('help', {}, [subcmd], function(err) {
+                        return callback(err ? err : true);
+                    });
                 } else {
                     hashOptions.location = opts.l;
                     return cb();
@@ -289,6 +297,7 @@ Fash.prototype.do_add_data = function(subcmd, opts, args, callback) {
         if (err) {
             console.error(err);
         }
+        return callback(err);
     });
     return (undefined);
 };
@@ -327,13 +336,15 @@ Fash.prototype.do_add_data.help = (
 Fash.prototype.do_remap_vnode = function(subcmd, opts, args, callback) {
     var self = this;
     if (opts.help) {
-        this.do_help('help', {}, [subcmd], callback);
-        return (callback());
+        this.do_help('help', {}, [subcmd], function(err) {
+            return callback(err ? err : true);
+        });
     }
 
     if (args.length !== 0 || !opts.v || !opts.p) {
-        this.do_help('help', {}, [subcmd], callback);
-        return (callback());
+        this.do_help('help', {}, [subcmd], function(err) {
+            return callback(err ? err : true);
+        });
     }
 
     var hashOptions = {
@@ -367,8 +378,9 @@ Fash.prototype.do_remap_vnode = function(subcmd, opts, args, callback) {
                 hashOptions.backend = fash.BACKEND.LEVEL_DB;
                 constructor = fash.load;
                 if (!opts.l) {
-                    this.do_help('help', {}, [subcmd], callback);
-                    return (callback());
+                    this.do_help('help', {}, [subcmd], function(err) {
+                        return callback(err ? err : true);
+                    });
                 } else {
                     hashOptions.location = opts.l;
                     return cb();
@@ -416,6 +428,7 @@ Fash.prototype.do_remap_vnode = function(subcmd, opts, args, callback) {
         if (err) {
             console.error(err);
         }
+        return callback(err);
     });
     return (undefined);
 };
@@ -454,13 +467,15 @@ Fash.prototype.do_remap_vnode.help = (
 Fash.prototype.do_remove_pnode = function(subcmd, opts, args, callback) {
     var self = this;
     if (opts.help) {
-        this.do_help('help', {}, [subcmd], callback);
-        return (callback());
+        this.do_help('help', {}, [subcmd], function(err) {
+            return callback(err ? err : true);
+        });
     }
 
     if (args.length !== 0 || !opts.p) {
-        this.do_help('help', {}, [subcmd], callback);
-        return (callback());
+        this.do_help('help', {}, [subcmd], function(err) {
+            return callback(err ? err : true);
+        });
     }
 
     var hashOptions = {
@@ -494,8 +509,9 @@ Fash.prototype.do_remove_pnode = function(subcmd, opts, args, callback) {
                 hashOptions.backend = fash.BACKEND.LEVEL_DB;
                 constructor = fash.load;
                 if (!opts.l) {
-                    this.do_help('help', {}, [subcmd], callback);
-                    return (callback());
+                    this.do_help('help', {}, [subcmd], function(err) {
+                        return callback(err ? err : true);
+                    });
                 } else {
                     hashOptions.location = opts.l;
                     return cb();
@@ -529,6 +545,7 @@ Fash.prototype.do_remove_pnode = function(subcmd, opts, args, callback) {
         if (err) {
             console.error(err);
         }
+        return callback(err);
     });
 
     return (undefined);
@@ -564,13 +581,15 @@ Fash.prototype.do_remove_pnode.help = (
 Fash.prototype.do_get_node = function(subcmd, opts, args, callback) {
     var self = this;
     if (opts.help) {
-        this.do_help('help', {}, [subcmd], callback);
-        return (callback());
+        this.do_help('help', {}, [subcmd], function(err) {
+            return callback(err ? err : true);
+        });
     }
 
     if (args.length !== 1) {
-        this.do_help('help', {}, [subcmd], callback);
-        return (callback());
+        this.do_help('help', {}, [subcmd], function(err) {
+            return callback(err ? err : true);
+        });
     }
 
     var hashOptions = {
@@ -604,8 +623,9 @@ Fash.prototype.do_get_node = function(subcmd, opts, args, callback) {
                 hashOptions.backend = fash.BACKEND.LEVEL_DB;
                 constructor = fash.load;
                 if (!opts.l) {
-                    this.do_help('help', {}, [subcmd], callback);
-                    return (callback());
+                    this.do_help('help', {}, [subcmd], function(err) {
+                        return callback(err ? err : true);
+                    });
                 } else {
                     hashOptions.location = opts.l;
                     return cb();
@@ -633,6 +653,7 @@ Fash.prototype.do_get_node = function(subcmd, opts, args, callback) {
         if (err) {
             console.error(err);
         }
+        return callback(err);
     });
 
     return (undefined);
@@ -660,8 +681,9 @@ Fash.prototype.do_get_node.help = (
 Fash.prototype.do_print_hash = function(subcmd, opts, args, callback) {
     var self = this;
     if (opts.help) {
-        this.do_help('help', {}, [subcmd], callback);
-        return (callback());
+        this.do_help('help', {}, [subcmd], function(err) {
+            return callback(err ? err : true);
+        });
     }
 
     var hashOptions = {
@@ -695,8 +717,9 @@ Fash.prototype.do_print_hash = function(subcmd, opts, args, callback) {
                 hashOptions.backend = fash.BACKEND.LEVEL_DB;
                 constructor = fash.load;
                 if (!opts.l) {
-                    this.do_help('help', {}, [subcmd], callback);
-                    return (callback());
+                    this.do_help('help', {}, [subcmd], function(err) {
+                        return callback(err ? err : true);
+                    });
                 } else {
                     hashOptions.location = opts.l;
                     return cb();
@@ -725,6 +748,7 @@ Fash.prototype.do_print_hash = function(subcmd, opts, args, callback) {
         if (err) {
             console.error(err);
         }
+        return callback(err);
     });
 
     return (undefined);
@@ -755,8 +779,9 @@ Fash.prototype.do_diff = function (subcmd, opts, args, callback) {
     if (opts.help || args.length !== 2 ||
         (args[0] === '-' && args[1] === '-')) {
 
-        this.do_help('help', {}, [subcmd], callback);
-        return (callback());
+        this.do_help('help', {}, [subcmd], function(err) {
+            return callback(err ? err : true);
+        });
     }
 
     function chooseBackend(b) {
@@ -767,7 +792,7 @@ Fash.prototype.do_diff = function (subcmd, opts, args, callback) {
         } else {
             console.error('one of %j must be specified if not passing ' +
                           'topology via stdin', BACKENDS);
-            return (callback());
+            return (callback(true));
         }
     }
 
@@ -779,7 +804,7 @@ Fash.prototype.do_diff = function (subcmd, opts, args, callback) {
         } else {
             console.error('one of %j must be specified if not passing ' +
                           'topology via stdin', BACKENDS);
-            return (callback());
+            return (callback(true));
         }
     }
 
@@ -808,7 +833,7 @@ Fash.prototype.do_diff = function (subcmd, opts, args, callback) {
         } else {
             console.error('one of %j must be specified if not passing ' +
                           'topology via stdin', BACKENDS);
-            return (callback());
+            return (callback(true));
         }
     }
 
@@ -960,6 +985,7 @@ Fash.prototype.do_diff = function (subcmd, opts, args, callback) {
     ]}, function (err) {
         if (err) {
             console.error(err);
+            return callback(err);
         }
     });
     return (undefined);
@@ -984,4 +1010,11 @@ Fash.prototype.do_diff.help = (
     + '    fash diff -b leveldb -b memory leveldbdir ring.json'
 );
 
-cmdln.main(Fash); // mainline
+var cli = new Fash();
+cli.main(process.argv, function(err, subcmd) {
+    if (err) {
+        process.exit(1);
+    } else {
+        process.exit(0);
+    }
+});
