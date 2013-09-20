@@ -37,6 +37,7 @@
     "bunyan": "*",
     "cmdln": "1.1.1",
     "dashdash": "1.2.1",
+    "dtrace-provider": "0.2.8",
     "levelup": "0.12.0",
     "leveldown": "0.6.2",
     "once": "1.1.1",
