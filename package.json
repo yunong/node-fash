@@ -39,7 +39,7 @@
     "bunyan": "*",
     "cmdln": "1.1.1",
     "dashdash": "1.2.1",
-    "levelup": "git://github.com/yunong/node-levelup.git#c8d0bcb",
+    "levelup": "git://github.com/yunong/node-levelup.git#273cbda",
     "leveldown": "0.8.0",
     "once": "1.1.1",
     "redis": "0.8.4",
