@@ -81,17 +81,20 @@ Fash.prototype.do_create = function(subcmd, opts, args, callback) {
             return callback(err);
         }
 
-        chash.serialize(function(_err, sh) {
-            if (_err) {
-                console.error(_err);
-                return callback(_err);
-            }
-            if (opts.o) {
-                console.log(sh);
-            }
+        if (opts.o) {
+            chash.serialize(function(_err, sh) {
+                if (_err) {
+                    console.error(_err);
+                    return callback(_err);
+                }
+                if (opts.o) {
+                    console.log(sh);
+                }
+                return (callback());
+            });
+        } else {
             return (callback());
-        });
-        return (undefined);
+        }
     });
 
     return (undefined);
