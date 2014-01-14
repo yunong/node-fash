@@ -581,6 +581,101 @@ Fash.prototype.do_remove_pnode.help = (
     + '{{options}}'
 );
 
+Fash.prototype.do_get_pnodes = function(subcmd, opts, args, callback) {
+    var self = this;
+    if (opts.help) {
+        this.do_help('help', {}, [subcmd], function(err) {
+            return callback(err ? err : true);
+        });
+    }
+
+    var hashOptions = {
+        log: self.log
+    };
+    var hash;
+    var constructor;
+
+    vasync.pipeline({funcs: [
+        function prepInput(_, cb) {
+            if (!opts.b || opts.b === BACKENDS.IN_MEMORY) {
+                hashOptions.backend = fash.BACKEND.IN_MEMORY;
+                constructor = fash.deserialize;
+                if (opts.l) {
+                    hashOptions.topology = fs.readFileSync(opts.l, 'utf8');
+                    return cb();
+                } else {
+                    hashOptions.topology = '';
+                    process.stdin.resume();
+                    process.stdin.setEncoding('utf8');
+
+                    process.stdin.on('data', function(chunk) {
+                        hashOptions.topology += chunk;
+                    });
+
+                    process.stdin.on('end', function() {
+                        return cb();
+                    });
+                }
+            } else if (opts.b === BACKENDS.LEVEL_DB) {
+                hashOptions.backend = fash.BACKEND.LEVEL_DB;
+                constructor = fash.load;
+                if (!opts.l) {
+                    this.do_help('help', {}, [subcmd], function(err) {
+                        return callback(err ? err : true);
+                    });
+                } else {
+                    hashOptions.location = opts.l;
+                    return cb();
+                }
+            } else {
+                console.error('one of %j must be specified if not passing ' +
+                              'topology via stdin', BACKENDS);
+                return (undefined);
+            }
+            return (undefined);
+        },
+        function loadRing(_, cb) {
+            hash = constructor(hashOptions, cb);
+        },
+        function getPnodes(_, cb) {
+            hash.getPnodes(function (err, pnodes) {
+                if (err) {
+                    return cb (err);
+                }
+
+                console.log(pnodes);
+                return cb();
+            });
+        }
+    ], arg: {}}, function(err) {
+        if (err) {
+            console.error(err);
+        }
+        return callback(err);
+    });
+
+    return (undefined);
+};
+Fash.prototype.do_get_pnodes.options = [{
+    names: [ 'l', 'location' ],
+    type: 'string',
+    help: 'the location of the topology, if using the in_memory backend, \n' +
+          'this is the location of the serialized ring on disk, if using \n ' +
+          'the leveldb backend, this is the path to the levedb on disk.'
+}, {
+    names: [ 'b', 'backend' ],
+    type: 'string',
+    help: 'the backend to use'
+}];
+Fash.prototype.do_get_pnodes.help = (
+    'get all the pnodes in the ring'
+    + '\n'
+    + 'usage:\n'
+    + '     fash get_pnodes [options] value\n'
+    + '\n'
+    + '{{options}}'
+);
+
 Fash.prototype.do_get_node = function(subcmd, opts, args, callback) {
     var self = this;
     if (opts.help) {
