@@ -202,7 +202,7 @@ Fash.prototype.do_add_data = function(subcmd, opts, args, callback) {
         });
     }
 
-    if (opts.b !== BACKENDS.IN_MEMORY || opts.b !== BACKENDS.LEVEL_DB) {
+    if (opts.b !== BACKENDS.IN_MEMORY && opts.b !== BACKENDS.LEVEL_DB) {
         console.error(sprintf('backend must be one of %s or %s',
                               BACKENDS.IN_MEMORY,
                               BACKENDS.LEVEL_DB));
@@ -333,7 +333,7 @@ Fash.prototype.do_remap_vnode = function(subcmd, opts, args, callback) {
         });
     }
 
-    if (opts.b !== BACKENDS.IN_MEMORY || opts.b !== BACKENDS.LEVEL_DB) {
+    if (opts.b !== BACKENDS.IN_MEMORY && opts.b !== BACKENDS.LEVEL_DB) {
         console.error(sprintf('backend must be one of %s or %s',
                               BACKENDS.IN_MEMORY,
                               BACKENDS.LEVEL_DB));
@@ -463,7 +463,7 @@ Fash.prototype.do_remove_pnode = function(subcmd, opts, args, callback) {
         });
     }
 
-    if (opts.b !== BACKENDS.IN_MEMORY || opts.b !== BACKENDS.LEVEL_DB) {
+    if (opts.b !== BACKENDS.IN_MEMORY && opts.b !== BACKENDS.LEVEL_DB) {
         console.error(sprintf('backend must be one of %s or %s',
                               BACKENDS.IN_MEMORY,
                               BACKENDS.LEVEL_DB));
@@ -574,7 +574,7 @@ Fash.prototype.do_get_pnodes = function(subcmd, opts, args, callback) {
         });
     }
 
-    if (opts.b !== BACKENDS.IN_MEMORY || opts.b !== BACKENDS.LEVEL_DB) {
+    if (opts.b !== BACKENDS.IN_MEMORY && opts.b !== BACKENDS.LEVEL_DB) {
         console.error(sprintf('backend must be one of %s or %s',
                               BACKENDS.IN_MEMORY,
                               BACKENDS.LEVEL_DB));
@@ -673,7 +673,7 @@ Fash.prototype.do_get_vnodes = function(subcmd, opts, args, callback) {
         });
     }
 
-    if (opts.b !== BACKENDS.IN_MEMORY || opts.b !== BACKENDS.LEVEL_DB) {
+    if (opts.b !== BACKENDS.IN_MEMORY && opts.b !== BACKENDS.LEVEL_DB) {
         console.error(sprintf('backend must be one of %s or %s',
                               BACKENDS.IN_MEMORY,
                               BACKENDS.LEVEL_DB));
@@ -772,7 +772,7 @@ Fash.prototype.do_get_node = function(subcmd, opts, args, callback) {
         });
     }
 
-    if (opts.b !== BACKENDS.IN_MEMORY || opts.b !== BACKENDS.LEVEL_DB) {
+    if (opts.b !== BACKENDS.IN_MEMORY && opts.b !== BACKENDS.LEVEL_DB) {
         console.error(sprintf('backend must be one of %s or %s',
                               BACKENDS.IN_MEMORY,
                               BACKENDS.LEVEL_DB));
@@ -870,7 +870,7 @@ Fash.prototype.do_print_hash = function(subcmd, opts, args, callback) {
         });
     }
 
-    if (opts.b !== BACKENDS.IN_MEMORY || opts.b !== BACKENDS.LEVEL_DB) {
+    if (opts.b !== BACKENDS.IN_MEMORY && opts.b !== BACKENDS.LEVEL_DB) {
         console.error(sprintf('backend must be one of %s or %s',
                               BACKENDS.IN_MEMORY,
                               BACKENDS.LEVEL_DB));
