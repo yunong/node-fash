@@ -44,13 +44,7 @@ util.inherits(Fash, Cmdln);
 Fash.prototype.do_create = function(subcmd, opts, args, callback) {
     var self = this;
 
-    if (opts.help) {
-        this.do_help('help', {}, [subcmd], function(err) {
-            return callback(err ? err : true);
-        });
-    }
-
-    if (args.length !== 0 || !opts.v || !opts.p) {
+    if (opts.help || args.length !== 0 || !opts.v || !opts.p) {
         this.do_help('help', {}, [subcmd], function(err) {
             return callback(err ? err : true);
         });
@@ -136,13 +130,8 @@ Fash.prototype.do_create.help = (
 
 Fash.prototype.do_deserialize_ring = function(subcmd, opts, args, callback) {
     var self = this;
-    if (opts.help) {
-        this.do_help('help', {}, [subcmd], function(err) {
-            return callback(err ? err : true);
-        });
-    }
 
-    if (args.length !== 0 || !opts.l) {
+    if (opts.help || args.length !== 0 || !opts.l) {
         this.do_help('help', {}, [subcmd], function(err) {
             return callback(err ? err : true);
         });
@@ -206,13 +195,8 @@ Fash.prototype.do_deserialize_ring.help = (
 
 Fash.prototype.do_add_data = function(subcmd, opts, args, callback) {
     var self = this;
-    if (opts.help || !opts.b) {
-        this.do_help('help', {}, [subcmd], function(err) {
-            return callback(err ? err : true);
-        });
-    }
 
-    if (args.length !== 0 || !opts.v || !opts.d || !opts.b) {
+    if (opts.help || args.length !== 0 || !opts.v || !opts.d || !opts.b) {
         this.do_help('help', {}, [subcmd], function(err) {
             return callback(err ? err : true);
         });
@@ -342,13 +326,8 @@ Fash.prototype.do_add_data.help = (
 
 Fash.prototype.do_remap_vnode = function(subcmd, opts, args, callback) {
     var self = this;
-    if (opts.help || !opts.b) {
-        this.do_help('help', {}, [subcmd], function(err) {
-            return callback(err ? err : true);
-        });
-    }
 
-    if (args.length !== 0 || !opts.v || !opts.p || !opts.b) {
+    if (opts.help || args.length !== 0 || !opts.v || !opts.p || !opts.b) {
         this.do_help('help', {}, [subcmd], function(err) {
             return callback(err ? err : true);
         });
@@ -477,7 +456,8 @@ Fash.prototype.do_remap_vnode.help = (
 
 Fash.prototype.do_remove_pnode = function(subcmd, opts, args, callback) {
     var self = this;
-    if (opts.help || !opts.b) {
+
+    if (opts.help || args.length !== 0 || !opts.p || !opts.b) {
         this.do_help('help', {}, [subcmd], function(err) {
             return callback(err ? err : true);
         });
@@ -687,13 +667,7 @@ Fash.prototype.do_get_pnodes.help = (
 
 Fash.prototype.do_get_vnodes = function(subcmd, opts, args, callback) {
     var self = this;
-    if (opts.help || !opts.b) {
-        this.do_help('help', {}, [subcmd], function(err) {
-            return callback(err ? err : true);
-        });
-    }
-
-    if (args.length !== 1) {
+    if (opts.help || !opts.b || args.length !== 1) {
         this.do_help('help', {}, [subcmd], function(err) {
             return callback(err ? err : true);
         });
@@ -792,13 +766,7 @@ Fash.prototype.do_get_vnodes.help = (
 
 Fash.prototype.do_get_node = function(subcmd, opts, args, callback) {
     var self = this;
-    if (opts.help || !opts.b) {
-        this.do_help('help', {}, [subcmd], function(err) {
-            return callback(err ? err : true);
-        });
-    }
-
-    if (args.length !== 1) {
+    if (opts.help || !opts.b || args.length !== 1) {
         this.do_help('help', {}, [subcmd], function(err) {
             return callback(err ? err : true);
         });
