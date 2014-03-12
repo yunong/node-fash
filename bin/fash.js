@@ -51,6 +51,12 @@ Fash.prototype.do_create = function(subcmd, opts, args, callback) {
     }
 
     var pnodes = opts.p.split(' ');
+    for (var i = 0; i < pnodes.length; i++) {
+        var p = pnodes[i];
+        if (!p || p === '') {
+            pnodes.splice(i, 1);
+        }
+    }
     switch(opts.b) {
         case BACKENDS.IN_MEMORY:
             opts.b = fash.BACKEND.IN_MEMORY;
@@ -257,6 +263,12 @@ Fash.prototype.do_add_data = function(subcmd, opts, args, callback) {
         function addData(_, cb) {
             var count = 0;
             var vnodes = opts.v.split(' ');
+            for (var i = 0; i < vnodes.length; i++) {
+                var v = vnodes[i];
+                if (!v || v === '') {
+                    vnodes.splice(i, 1);
+                }
+            }
             hash.addData(parseInt(vnodes[count], 10), opts.d, addDataCb);
             function addDataCb(err) {
                 if (err) {
@@ -388,6 +400,12 @@ Fash.prototype.do_remap_vnode = function(subcmd, opts, args, callback) {
         function remap(_, cb) {
             var count = 0;
             var vnodes = opts.v.split(' ');
+            for (var i = 0; i < vnodes.length; i++) {
+                var v = vnodes[i];
+                if (!v || v === '') {
+                    vnodes.splice(i, 1);
+                }
+            }
             hash.remapVnode(opts.p, parseInt(vnodes[count], 10), remapCb);
             function remapCb(err) {
                 if (err) {
