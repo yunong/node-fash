@@ -22,6 +22,7 @@ var BACKENDS = {
 };
 
 function Fash() {
+    console.log('xXX');
     Cmdln.call(this, {
         name: 'fash',
         desc: 'fash cmdline tool',
@@ -42,6 +43,7 @@ function Fash() {
 util.inherits(Fash, Cmdln);
 
 Fash.prototype.do_create = function(subcmd, opts, args, callback) {
+    console.log('xXX');
     var self = this;
 
     if (opts.help || args.length !== 0 || !opts.v || !opts.p) {
@@ -56,6 +58,11 @@ Fash.prototype.do_create = function(subcmd, opts, args, callback) {
         if (!p || p === '') {
             pnodes.splice(i, 1);
         }
+    }
+    if (!pnodes || pnodes.length === 0 || !pnodes[0]) {
+        this.do_help('help', {}, [subcmd], function(err) {
+            return callback(err ? err : true);
+        });
     }
     switch(opts.b) {
         case BACKENDS.IN_MEMORY:
