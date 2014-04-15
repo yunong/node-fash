@@ -27,7 +27,7 @@ var PNODES = new Array(NUMBER_OF_PNODES);
 var PNODE_STRING = '\'';
 var ALGORITHM = ['sha256', 'sha1', 'md5'];
 
-exports.beforeTest = function(t) {
+exports.beforeTest = function (t) {
     for (var i = 0; i < NUMBER_OF_PNODES; i++) {
         PNODES[i] = 'pnode' + i;
         if (i === 0) {
@@ -43,12 +43,12 @@ exports.beforeTest = function(t) {
 };
 
 _testAllConstructors(function newRing(algo, constructor, t) {
-    constructor(algo, function(err, hLevel, hInMem) {
+    constructor(algo, function (err, hLevel, hInMem) {
         if (err) {
             t.fail(err);
             t.done();
         } else {
-            _verifyRing(hLevel, hInMem, t, algo, function() {
+            _verifyRing(hLevel, hInMem, t, algo, function () {
                 t.done();
             });
         }
@@ -58,14 +58,14 @@ _testAllConstructors(function newRing(algo, constructor, t) {
 _testAllConstructors(function remapOnePnodeToAnother(algo, constructor, t) {
     vasync.pipeline({funcs: [
         function newRing(_, cb) {
-            constructor(algo, function(err, hLevel, hInMem) {
+            constructor(algo, function (err, hLevel, hInMem) {
                 _.hLevel = hLevel;
                 _.hInMem = hInMem;
                 return cb(err);
             });
         },
         function getVnodes(_, cb) {
-            _.hLevel.getVnodes(PNODES[0], function(err, vnodes) {
+            _.hLevel.getVnodes(PNODES[0], function (err, vnodes) {
                 _.vnodes = vnodes;
                 return cb(err);
             });
@@ -88,7 +88,7 @@ _testAllConstructors(function remapOnePnodeToAnother(algo, constructor, t) {
             };
         },
         function assertVnodes(_, cb) {
-            _.hLevel.getVnodes(PNODES[1], function(err, vnodes) {
+            _.hLevel.getVnodes(PNODES[1], function (err, vnodes) {
                 if (err) {
                     return cb(err);
                 }
@@ -101,7 +101,7 @@ _testAllConstructors(function remapOnePnodeToAnother(algo, constructor, t) {
         function verify(_, cb) {
             _verifyRing(_.hLevel, _.hInMem, t, algo, cb);
         }
-    ], arg: {}}, function(err) {
+    ], arg: {}}, function (err) {
         if (err) {
             t.fail(err);
         }
@@ -112,14 +112,14 @@ _testAllConstructors(function remapOnePnodeToAnother(algo, constructor, t) {
 _testAllConstructors(function remapSomeVnodeToAnother(algo, constructor, t) {
     vasync.pipeline({funcs: [
         function newRing(_, cb) {
-            constructor(algo, function(err, hLevel, hInMem) {
+            constructor(algo, function (err, hLevel, hInMem) {
                 _.hLevel = hLevel;
                 _.hInMem = hInMem;
                 return cb(err);
             });
         },
         function getVnodes(_, cb) {
-            _.hLevel.getVnodes(PNODES[0], function(err, vnodes) {
+            _.hLevel.getVnodes(PNODES[0], function (err, vnodes) {
                 _.vnodes = vnodes.splice(vnodes.length / 2);
                 return cb(err);
             });
@@ -142,7 +142,7 @@ _testAllConstructors(function remapSomeVnodeToAnother(algo, constructor, t) {
             };
         },
         function assertVnodes(_, cb) {
-            _.hLevel.getVnodes(PNODES[1], function(err, vnodes) {
+            _.hLevel.getVnodes(PNODES[1], function (err, vnodes) {
                 if (err) {
                     return cb(err);
                 }
@@ -155,7 +155,7 @@ _testAllConstructors(function remapSomeVnodeToAnother(algo, constructor, t) {
         function verify(_, cb) {
             _verifyRing(_.hLevel, _.hInMem, t, algo, cb);
         }
-    ], arg: {}}, function(err) {
+    ], arg: {}}, function (err) {
         if (err) {
             t.fail(err);
         }
@@ -175,14 +175,14 @@ _testAllConstructors(function removePnode(algo, constructor, t) {
     var remapPnode = PNODES[remapIdx];
     vasync.pipeline({funcs: [
         function newRing(_, cb) {
-            constructor(algo, function(err, hLevel, hInMem) {
+            constructor(algo, function (err, hLevel, hInMem) {
                 _.hLevel = hLevel;
                 _.hInMem = hInMem;
                 return cb(err);
             });
         },
         function getVnodes(_, cb) {
-            _.hLevel.getVnodes(rmPnode, function(err, vnodes) {
+            _.hLevel.getVnodes(rmPnode, function (err, vnodes) {
                 _.vnodes = vnodes;
                 return cb(err);
             });
@@ -205,7 +205,7 @@ _testAllConstructors(function removePnode(algo, constructor, t) {
             };
         },
         function assertVnodes(_, cb) {
-            _.hLevel.getVnodes(remapPnode, function(err, vnodes) {
+            _.hLevel.getVnodes(remapPnode, function (err, vnodes) {
                 if (err) {
                     return cb(err);
                 }
@@ -216,7 +216,7 @@ _testAllConstructors(function removePnode(algo, constructor, t) {
             });
         },
         function removePnode(_, cb) {
-            _.hLevel.removePnode(rmPnode, function(err) {
+            _.hLevel.removePnode(rmPnode, function (err) {
                 if (err) {
                     return cb(err);
                 }
@@ -229,7 +229,7 @@ _testAllConstructors(function removePnode(algo, constructor, t) {
         },
         // removing the pnode again should throw
         function removePnodeAgain(_, cb) {
-            _.hLevel.removePnode(rmPnode, function(err) {
+            _.hLevel.removePnode(rmPnode, function (err) {
                 if (!err) {
                     return cb(new Error('removing pnode again should throw'));
                 } else {
@@ -238,7 +238,7 @@ _testAllConstructors(function removePnode(algo, constructor, t) {
             });
         },
         function checkPnodes(_, cb) {
-            _.hLevel.getPnodes(function(err, pnodes) {
+            _.hLevel.getPnodes(function (err, pnodes) {
                 if (err) {
                     return cb(err);
                 }
@@ -251,7 +251,7 @@ _testAllConstructors(function removePnode(algo, constructor, t) {
                 return cb();
             });
         }
-    ], arg: {}}, function(err) {
+    ], arg: {}}, function (err) {
         if (err) {
             t.fail(err);
         }
@@ -263,14 +263,14 @@ _testAllConstructors(function addNewPnode(algo, constructor, t) {
     var newPnode = 'yunong';
     vasync.pipeline({funcs: [
         function newRing(_, cb) {
-            constructor(algo, function(err, hLevel, hInMem) {
+            constructor(algo, function (err, hLevel, hInMem) {
                 _.hLevel = hLevel;
                 _.hInMem = hInMem;
                 return cb(err);
             });
         },
         function getVnodes(_, cb) {
-            _.hLevel.getVnodes(PNODES[0], function(err, vnodes) {
+            _.hLevel.getVnodes(PNODES[0], function (err, vnodes) {
                 _.vnodes = vnodes;
                 return cb(err);
             });
@@ -293,7 +293,7 @@ _testAllConstructors(function addNewPnode(algo, constructor, t) {
             };
         },
         function assertVnodes(_, cb) {
-            _.hLevel.getVnodes(PNODES[1], function(err, vnodes) {
+            _.hLevel.getVnodes(PNODES[1], function (err, vnodes) {
                 if (err) {
                     return cb(err);
                 }
@@ -307,7 +307,7 @@ _testAllConstructors(function addNewPnode(algo, constructor, t) {
             _verifyRing(_.hLevel, _.hInMem, t, algo, cb);
         },
         function removePnode(_, cb) {
-            _.hLevel.removePnode(PNODES[0], function(err) {
+            _.hLevel.removePnode(PNODES[0], function (err) {
                 if (err) {
                     return cb(err);
                 }
@@ -320,7 +320,7 @@ _testAllConstructors(function addNewPnode(algo, constructor, t) {
         },
         // removing the pnode again should throw
         function removePnodeAgain(_, cb) {
-            _.hLevel.removePnode(PNODES[0], function(err) {
+            _.hLevel.removePnode(PNODES[0], function (err) {
                 if (!err) {
                     return cb(new Error('removing pnode again should throw'));
                 } else {
@@ -328,7 +328,7 @@ _testAllConstructors(function addNewPnode(algo, constructor, t) {
                 }
             });
         }
-    ], arg: {}}, function(err) {
+    ], arg: {}}, function (err) {
         if (err) {
             t.fail(err);
         }
@@ -343,14 +343,14 @@ _testAllConstructors(function addNewPnodeRemapOnlySubsetOfOldPnode(algo,
     var newPnode = 'yunong';
     vasync.pipeline({funcs: [
         function newRing(_, cb) {
-            constructor(algo, function(err, hLevel, hInMem) {
+            constructor(algo, function (err, hLevel, hInMem) {
                 _.hLevel = hLevel;
                 _.hInMem = hInMem;
                 return cb(err);
             });
         },
         function getVnodes(_, cb) {
-            _.hLevel.getVnodes(PNODES[0], function(err, vnodes) {
+            _.hLevel.getVnodes(PNODES[0], function (err, vnodes) {
                 _.vnodes = vnodes.splice(vnodes.length / 2);
                 return cb(err);
             });
@@ -373,7 +373,7 @@ _testAllConstructors(function addNewPnodeRemapOnlySubsetOfOldPnode(algo,
             };
         },
         function assertVnodes(_, cb) {
-            _.hLevel.getVnodes(PNODES[1], function(err, vnodes) {
+            _.hLevel.getVnodes(PNODES[1], function (err, vnodes) {
                 if (err) {
                     return cb(err);
                 }
@@ -388,7 +388,7 @@ _testAllConstructors(function addNewPnodeRemapOnlySubsetOfOldPnode(algo,
         },
         // removing the oldpnode should throw
         function removePnode(_, cb) {
-            _.hLevel.removePnode(PNODES[0], function(err) {
+            _.hLevel.removePnode(PNODES[0], function (err) {
                 if (!err) {
                     return cb(new Error('removing old pnode should throw'));
                 } else {
@@ -399,7 +399,7 @@ _testAllConstructors(function addNewPnodeRemapOnlySubsetOfOldPnode(algo,
         function verify2(_, cb) {
             _verifyRing(_.hLevel, _.hInMem, t, algo, cb);
         },
-    ], arg: {}}, function(err) {
+    ], arg: {}}, function (err) {
         if (err) {
             t.fail(err);
         }
@@ -410,7 +410,7 @@ _testAllConstructors(function addNewPnodeRemapOnlySubsetOfOldPnode(algo,
 _testAllConstructors(function addData(algo, constructor, t) {
     vasync.pipeline({funcs: [
         function newRing(_, cb) {
-            constructor(algo, function(err, hLevel, hInMem) {
+            constructor(algo, function (err, hLevel, hInMem) {
                 _.hLevel = hLevel;
                 _.hInMem = hInMem;
                 return cb(err);
@@ -418,7 +418,7 @@ _testAllConstructors(function addData(algo, constructor, t) {
         },
         function pickVnode(_, cb) {
             _.key = uuid.v4();
-            _.hLevel.getNode(_.key, function(err, node) {
+            _.hLevel.getNode(_.key, function (err, node) {
                 _.node = node;
                 return cb(err);
             });
@@ -428,7 +428,7 @@ _testAllConstructors(function addData(algo, constructor, t) {
             _.hInMem.addData(_.node.vnode, 'foo');
         },
         function getData(_, cb) {
-            _.hLevel.getNode(_.key, function(err, node) {
+            _.hLevel.getNode(_.key, function (err, node) {
                 if (err) {
                     return cb(err);
                 }
@@ -438,7 +438,7 @@ _testAllConstructors(function addData(algo, constructor, t) {
             });
         },
         function checkVnodeArray(_, cb) {
-            _.hLevel.getDataVnodes(function(err, vnodeArray) {
+            _.hLevel.getDataVnodes(function (err, vnodeArray) {
                 if (err) {
                     return cb(err);
                 }
@@ -451,7 +451,7 @@ _testAllConstructors(function addData(algo, constructor, t) {
         function verify(_, cb) {
             _verifyRing(_.hLevel, _.hInMem, t, algo, cb);
         },
-    ], arg: {}}, function(err) {
+    ], arg: {}}, function (err) {
         if (err) {
             t.fail(err);
         }
@@ -462,7 +462,7 @@ _testAllConstructors(function addData(algo, constructor, t) {
 _testAllConstructors(function addDataBackToNull(algo, constructor, t) {
     vasync.pipeline({funcs: [
         function newRing(_, cb) {
-            constructor(algo, function(err, hLevel, hInMem) {
+            constructor(algo, function (err, hLevel, hInMem) {
                 _.hLevel = hLevel;
                 _.hInMem = hInMem;
                 return cb(err);
@@ -470,7 +470,7 @@ _testAllConstructors(function addDataBackToNull(algo, constructor, t) {
         },
         function pickVnode(_, cb) {
             _.key = uuid.v4();
-            _.hLevel.getNode(_.key, function(err, node) {
+            _.hLevel.getNode(_.key, function (err, node) {
                 _.node = node;
                 return cb(err);
             });
@@ -480,7 +480,7 @@ _testAllConstructors(function addDataBackToNull(algo, constructor, t) {
             _.hInMem.addData(_.node.vnode, 'foo');
         },
         function getData(_, cb) {
-            _.hLevel.getNode(_.key, function(err, node) {
+            _.hLevel.getNode(_.key, function (err, node) {
                 if (err) {
                     return cb(err);
                 }
@@ -494,7 +494,7 @@ _testAllConstructors(function addDataBackToNull(algo, constructor, t) {
             _.hLevel.addData(_.node.vnode, undefined, cb);
         },
         function checkVnodeArray(_, cb) {
-            _.hLevel.getDataVnodes(function(err, vnodeArray) {
+            _.hLevel.getDataVnodes(function (err, vnodeArray) {
                 if (err) {
                     return cb(err);
                 }
@@ -507,7 +507,7 @@ _testAllConstructors(function addDataBackToNull(algo, constructor, t) {
         function verify(_, cb) {
             _verifyRing(_.hLevel, _.hInMem, t, algo, cb);
         },
-    ], arg: {}}, function(err) {
+    ], arg: {}}, function (err) {
         if (err) {
             t.fail(err);
         }
@@ -521,7 +521,7 @@ _testAllConstructors(function addDataRemapVnodeToDifferentPnode(algo,
 {
     vasync.pipeline({funcs: [
         function newRing(_, cb) {
-            constructor(algo, function(err, hLevel, hInMem) {
+            constructor(algo, function (err, hLevel, hInMem) {
                 _.hLevel = hLevel;
                 _.hInMem = hInMem;
                 return cb(err);
@@ -529,7 +529,7 @@ _testAllConstructors(function addDataRemapVnodeToDifferentPnode(algo,
         },
         function pickVnode(_, cb) {
             _.key = uuid.v4();
-            _.hLevel.getNode(_.key, function(err, node) {
+            _.hLevel.getNode(_.key, function (err, node) {
                 _.node = node;
                 return cb(err);
             });
@@ -549,7 +549,7 @@ _testAllConstructors(function addDataRemapVnodeToDifferentPnode(algo,
             _.hInMem.addData(_.node.vnode, 'foo');
         },
         function getData(_, cb) {
-            _.hLevel.getNode(_.key, function(err, node) {
+            _.hLevel.getNode(_.key, function (err, node) {
                 if (err) {
                     return cb(err);
                 }
@@ -559,7 +559,7 @@ _testAllConstructors(function addDataRemapVnodeToDifferentPnode(algo,
             });
         },
         function checkVnodeArray(_, cb) {
-            _.hLevel.getDataVnodes(function(err, vnodeArray) {
+            _.hLevel.getDataVnodes(function (err, vnodeArray) {
                 if (err) {
                     return cb(err);
                 }
@@ -577,7 +577,7 @@ _testAllConstructors(function addDataRemapVnodeToDifferentPnode(algo,
             _.hLevel.remapVnode(_.newPnode, _.node.vnode, cb);
         },
         function assertVnodes(_, cb) {
-            _.hLevel.getVnodes(PNODES[1], function(err, vnodes) {
+            _.hLevel.getVnodes(PNODES[1], function (err, vnodes) {
                 if (err) {
                     return cb(err);
                 }
@@ -591,7 +591,7 @@ _testAllConstructors(function addDataRemapVnodeToDifferentPnode(algo,
             _verifyRing(_.hLevel, _.hInMem, t, algo, cb);
         },
         function getData2(_, cb) {
-            _.hLevel.getNode(_.key, function(err, node) {
+            _.hLevel.getNode(_.key, function (err, node) {
                 if (err) {
                     return cb(err);
                 }
@@ -602,7 +602,7 @@ _testAllConstructors(function addDataRemapVnodeToDifferentPnode(algo,
                 return cb();
             });
         },
-    ], arg: {}}, function(err) {
+    ], arg: {}}, function (err) {
         if (err) {
             t.fail(err);
         }
@@ -616,7 +616,7 @@ _testAllConstructors(function addDataRemapVnodeToNewPnode(algo, constructor,
     var newPnode = 'yunong';
     vasync.pipeline({funcs: [
         function newRing(_, cb) {
-            constructor(algo, function(err, hLevel, hInMem) {
+            constructor(algo, function (err, hLevel, hInMem) {
                 _.hLevel = hLevel;
                 _.hInMem = hInMem;
                 return cb(err);
@@ -624,7 +624,7 @@ _testAllConstructors(function addDataRemapVnodeToNewPnode(algo, constructor,
         },
         function pickVnode(_, cb) {
             _.key = uuid.v4();
-            _.hLevel.getNode(_.key, function(err, node) {
+            _.hLevel.getNode(_.key, function (err, node) {
                 _.node = node;
                 return cb(err);
             });
@@ -634,7 +634,7 @@ _testAllConstructors(function addDataRemapVnodeToNewPnode(algo, constructor,
             _.hInMem.addData(_.node.vnode, 'foo');
         },
         function getData(_, cb) {
-            _.hLevel.getNode(_.key, function(err, node) {
+            _.hLevel.getNode(_.key, function (err, node) {
                 if (err) {
                     return cb(err);
                 }
@@ -651,7 +651,7 @@ _testAllConstructors(function addDataRemapVnodeToNewPnode(algo, constructor,
             _.hLevel.remapVnode(newPnode, _.node.vnode, cb);
         },
         function assertVnodes(_, cb) {
-            _.hLevel.getVnodes(PNODES[1], function(err, vnodes) {
+            _.hLevel.getVnodes(PNODES[1], function (err, vnodes) {
                 if (err) {
                     return cb(err);
                 }
@@ -665,7 +665,7 @@ _testAllConstructors(function addDataRemapVnodeToNewPnode(algo, constructor,
             _verifyRing(_.hLevel, _.hInMem, t, algo, cb);
         },
         function getData2(_, cb) {
-            _.hLevel.getNode(_.key, function(err, node) {
+            _.hLevel.getNode(_.key, function (err, node) {
                 if (err) {
                     return cb(err);
                 }
@@ -676,7 +676,7 @@ _testAllConstructors(function addDataRemapVnodeToNewPnode(algo, constructor,
                 return cb();
             });
         },
-    ], arg: {}}, function(err) {
+    ], arg: {}}, function (err) {
         if (err) {
             t.fail(err);
         }
@@ -687,14 +687,14 @@ _testAllConstructors(function addDataRemapVnodeToNewPnode(algo, constructor,
 _testAllConstructors(function serialize(algo, constructor, t) {
     vasync.pipeline({funcs: [
         function newRing(_, cb) {
-            constructor(algo, function(err, hLevel, hInMem) {
+            constructor(algo, function (err, hLevel, hInMem) {
                 _.hLevel = hLevel;
                 _.hInMem = hInMem;
                 return cb(err);
             });
         },
         function serialize(_, cb) {
-            _.hLevel.serialize(function(err, topology) {
+            _.hLevel.serialize(function (err, topology) {
                 if (err) {
                     return cb(err);
                 }
@@ -709,7 +709,7 @@ _testAllConstructors(function serialize(algo, constructor, t) {
                     'topology should match in mem test version');
             return cb();
         }
-    ], arg: {}}, function(err) {
+    ], arg: {}}, function (err) {
         if (err) {
             t.fail(err);
         }
@@ -726,7 +726,7 @@ _testAllAlgorithms(function collision(algo, t) {
         vnodes: NUMBER_OF_VNODES,
         backend: fash.BACKEND.LEVEL_DB,
         location: '/tmp/' + uuid.v4()
-    }, function(err) {
+    }, function (err) {
         t.ok(err, 'identical pnodes should throw');
         t.done();
     });
@@ -735,19 +735,20 @@ _testAllAlgorithms(function collision(algo, t) {
 _testAllConstructors(function remapNonExistentVnodes(algo, constructor, t) {
     vasync.pipeline({funcs: [
         function newRing(_, cb) {
-            constructor(algo, function(err, hLevel, hInMem) {
+            constructor(algo, function (err, hLevel, hInMem) {
                 _.hLevel = hLevel;
                 _.hInMem = hInMem;
                 return cb(err);
             });
         },
         function remap(_, cb) {
-            _.hLevel.remapVnode('yunong', NUMBER_OF_VNODES + 10, function(err) {
+            _.hLevel.remapVnode('yunong', NUMBER_OF_VNODES + 10,
+                                function (err) {
                 t.ok(err, 'remapping non-existent vnode should throw');
                 return cb();
             });
         }
-    ], arg: {}}, function(err) {
+    ], arg: {}}, function (err) {
         if (err) {
             t.fail(err);
         }
@@ -758,7 +759,7 @@ _testAllConstructors(function remapNonExistentVnodes(algo, constructor, t) {
 _testAllConstructors(function remapVnodeToTheSamePnode(algo, constructor, t) {
     vasync.pipeline({funcs: [
         function newRing(_, cb) {
-            constructor(algo, function(err, hLevel, hInMem) {
+            constructor(algo, function (err, hLevel, hInMem) {
                 _.hLevel = hLevel;
                 _.hInMem = hInMem;
                 return cb(err);
@@ -766,18 +767,18 @@ _testAllConstructors(function remapVnodeToTheSamePnode(algo, constructor, t) {
         },
         function pickVnode(_, cb) {
             _.key = uuid.v4();
-            _.hLevel.getNode(_.key, function(err, node) {
+            _.hLevel.getNode(_.key, function (err, node) {
                 _.node = node;
                 return cb(err);
             });
         },
         function remap(_, cb) {
-            _.hLevel.remapVnode(_.node.pnode, _.node.vnode, function(err) {
+            _.hLevel.remapVnode(_.node.pnode, _.node.vnode, function (err) {
                 t.ok(err, 'remapping vnode to the same pnode should throw');
                 return cb();
             });
         },
-    ], arg: {}}, function(err) {
+    ], arg: {}}, function (err) {
         if (err) {
             t.fail(err);
         }
@@ -788,19 +789,19 @@ _testAllConstructors(function remapVnodeToTheSamePnode(algo, constructor, t) {
 _testAllConstructors(function removeNonExistentPnode(algo, constructor, t) {
     vasync.pipeline({funcs: [
         function newRing(_, cb) {
-            constructor(algo, function(err, hLevel, hInMem) {
+            constructor(algo, function (err, hLevel, hInMem) {
                 _.hLevel = hLevel;
                 _.hInMem = hInMem;
                 return cb(err);
             });
         },
         function remap(_, cb) {
-            _.hLevel.removePnode('yunong', function(err) {
+            _.hLevel.removePnode('yunong', function (err) {
                 t.ok(err, 'removing non-existent pnode should throw');
                 return cb();
             });
         },
-    ], arg: {}}, function(err) {
+    ], arg: {}}, function (err) {
         if (err) {
             t.fail(err);
         }
@@ -811,7 +812,7 @@ _testAllConstructors(function removeNonExistentPnode(algo, constructor, t) {
 _testAllConstructors(function removeNonEmptyPnode(algo, constructor, t) {
     vasync.pipeline({funcs: [
         function newRing(_, cb) {
-            constructor(algo, function(err, hLevel, hInMem) {
+            constructor(algo, function (err, hLevel, hInMem) {
                 _.hLevel = hLevel;
                 _.hInMem = hInMem;
                 return cb(err);
@@ -819,18 +820,18 @@ _testAllConstructors(function removeNonEmptyPnode(algo, constructor, t) {
         },
         function pickVnode(_, cb) {
             _.key = uuid.v4();
-            _.hLevel.getNode(_.key, function(err, node) {
+            _.hLevel.getNode(_.key, function (err, node) {
                 _.node = node;
                 return cb(err);
             });
         },
         function remap(_, cb) {
-            _.hLevel.removePnode(_.node.pnode, function(err) {
+            _.hLevel.removePnode(_.node.pnode, function (err) {
                 t.ok(err, 'removing non-empty pnode should throw');
                 return cb();
             });
         },
-    ], arg: {}}, function(err) {
+    ], arg: {}}, function (err) {
         if (err) {
             t.fail(err);
         }
@@ -843,7 +844,7 @@ function _verifyRing(h1, h2, t, algo, cb) {
     // XXX check validity of keys in leveldb.
     vasync.pipeline({funcs: [
         function checkVnodes(_, _cb) {
-            h1.db_.get(leveldb.LKEY_VNODE_COUNT, function(err, vnodeCount) {
+            h1.db_.get(leveldb.LKEY_VNODE_COUNT, function (err, vnodeCount) {
                 if (err) {
                     return _cb(new verror.VError(err));
                 }
@@ -853,7 +854,7 @@ function _verifyRing(h1, h2, t, algo, cb) {
             });
         },
         function checkComplete(_, _cb) {
-            h1.db_.get(leveldb.LKEY_COMPLETE, function(err, value) {
+            h1.db_.get(leveldb.LKEY_COMPLETE, function (err, value) {
                 if (err) {
                     err = new verror.VError(err);
                 }
@@ -862,14 +863,14 @@ function _verifyRing(h1, h2, t, algo, cb) {
         },
         function checkVersion(_, _cb) {
             _cb = once(_cb);
-            h1.db_.get(leveldb.LKEY_VERSION, function(err, version) {
+            h1.db_.get(leveldb.LKEY_VERSION, function (err, version) {
                 if (err) {
                     return _cb(new verror.VError(err));
                 }
                 try {
                     fash.assertVersion(version);
                     return _cb();
-                } catch(e) {
+                } catch (e) {
                     return _cb(new verror.VError(e));
                 }
             });
@@ -877,8 +878,7 @@ function _verifyRing(h1, h2, t, algo, cb) {
         function checkSlashVnodeSlashN(_, _cb) {
             // spot check /vnode/largestVnode
             h1.db_.get(sprintf(leveldb.LKEY_VNODE_V, NUMBER_OF_VNODES - 1),
-                       function(err, pnode)
-            {
+                       function (err, pnode) {
                 if (err) {
                     err = new verror.VError(err);
                 }
@@ -886,8 +886,8 @@ function _verifyRing(h1, h2, t, algo, cb) {
                 return _cb(err);
             });
         },
-        function getAlgorithm(_, _cb){
-            h1.db_.get(leveldb.LKEY_ALGORITHM, function(err, algorithm) {
+        function getAlgorithm(_, _cb) {
+            h1.db_.get(leveldb.LKEY_ALGORITHM, function (err, algorithm) {
                 if (err) {
                     return _cb(new verror.VError(err));
                 }
@@ -904,7 +904,7 @@ function _verifyRing(h1, h2, t, algo, cb) {
                 var random = Math.random().toString(33);
                 var key = random.substring(Math.floor(Math.random() *
                                                       random.length));
-                h1.getNode(key, (function(k, err, node1) {
+                h1.getNode(key, (function (k, err, node1) {
                     var node2 = h2.getNode(k);
                     LOG.debug({
                         err: err,
@@ -935,7 +935,7 @@ function _verifyRing(h1, h2, t, algo, cb) {
                 }).bind(this, key));
             }
         }
-    ], arg: {}}, function(err) {
+    ], arg: {}}, function (err) {
         return cb(err);
     });
 }
@@ -948,7 +948,7 @@ function _newRing(algo, cb) {
         vnodes: NUMBER_OF_VNODES,
         backend: fash.BACKEND.LEVEL_DB,
         location: '/tmp/' + uuid.v4()
-    }, function(err) {
+    }, function (err) {
         if (err) {
             return cb(err);
         }
@@ -977,14 +977,14 @@ function _newRingFromDb(algo, callback) {
             var eStr = FASH_CLI_PATH + ' create -v ' + NUMBER_OF_VNODES +
                 ' -l ' + location + ' -p ' + PNODE_STRING + ' -b leveldb ' +
                 '-a ' + algo;
-            exec(eStr, function(err, stdout, stderr) {
+            exec(eStr, function (err, stdout, stderr) {
                 return cb(err);
             });
         },
         function createRingFromDb(_, cb) {
             // set errorIfExists to false. The db already exists since we just
             // created it in a new process.
-            var lvlCfg= {
+            var lvlCfg = {
                 createIfMissing: true,
                 errorIfExists: false,
                 compression: false,
@@ -995,7 +995,7 @@ function _newRingFromDb(algo, callback) {
                 backend: fash.BACKEND.LEVEL_DB,
                 location: location,
                 leveldbCfg: lvlCfg
-            }, function(err) {
+            }, function (err) {
                 if (err) {
                     return cb(err);
                 }
@@ -1014,7 +1014,7 @@ function _newRingFromDb(algo, callback) {
                 return cb();
             });
         }
-    ], arg:{}}, function(err) {
+    ], arg: {}}, function (err) {
         if (err) {
             err = new verror.VError(err);
         }
@@ -1026,14 +1026,14 @@ function _newRingFromTopology(algo, cb) {
     var h1, h2;
     vasync.pipeline({funcs: [
         function newRing(_, cb) {
-            _newRing(algo, function(err, hLevel, hInMem) {
+            _newRing(algo, function (err, hLevel, hInMem) {
                 _.hLevel = hLevel;
                 h2 = hInMem;
                 return cb(err);
             });
         },
         function serialize(_, cb) {
-            _.hLevel.serialize(function(err, topology) {
+            _.hLevel.serialize(function (err, topology) {
                 if (err) {
                     return cb(err);
                 }
@@ -1047,18 +1047,18 @@ function _newRingFromTopology(algo, cb) {
                 topology: _.topology,
                 backend: fash.BACKEND.LEVEL_DB,
                 location: '/tmp/' + uuid.v4()
-            }, function(err) {
+            }, function (err) {
                 return cb(err);
             });
         }
-    ], arg: {}}, function(err) {
+    ], arg: {}}, function (err) {
         return cb(err, h1, h2);
     });
 }
 
 function _testAllAlgorithms(test) {
     for (var i = 0; i < TEST_ITERATIONS; i++) {
-        ALGORITHM.forEach(function(algo) {
+        ALGORITHM.forEach(function (algo) {
             exports[test.name + algo + i] = test.bind(null, algo);
         });
     }
@@ -1066,7 +1066,7 @@ function _testAllAlgorithms(test) {
 
 function _testAllConstructors(test) {
     for (var i = 0; i < TEST_ITERATIONS; i++) {
-        ALGORITHM.forEach(function(algo) {
+        ALGORITHM.forEach(function (algo) {
             exports[test.name + algo + 'new' + i] =
                 test.bind(null, algo, _newRing);
             exports[test.name + algo + 'fromDb' + i] =

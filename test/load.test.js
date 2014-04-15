@@ -23,7 +23,7 @@ var RING = fash.load({
     backend: fash.BACKEND.LEVEL_DB,
     location: DB_LOCATION,
     leveldbCfg: LVL_CFG
-}, function(err) {
+}, function (err) {
     if (err) {
         throw new verror.VError(err, 'unable to load ring from disk');
     }
@@ -34,7 +34,7 @@ var RING = fash.load({
     //log: LOG,
     //topology: fs.readFileSync(DB_LOCATION, 'utf-8'),
     //backend: fash.BACKEND.IN_MEMORY,
-//}, function(err) {
+//}, function (err) {
     //if (err) {
         //throw new verror.VError(err, 'unable to load ring from disk');
     //}
@@ -45,7 +45,7 @@ var RING = fash.load({
 var server = restify.createServer();
 server.use(restify.bodyParser());
 server.post('/hash', function (req, res, next) {
-    RING.getNode(req.params.key, function(err, val) {
+    RING.getNode(req.params.key, function (err, val) {
         if (err) {
             LOG.error({err: err, key: req.params.key}, 'unable to hash key');
             return next(err);
@@ -57,6 +57,6 @@ server.post('/hash', function (req, res, next) {
     });
 });
 
-server.listen(12345, function() {
+server.listen(12345, function () {
     console.log('server started.');
 });
